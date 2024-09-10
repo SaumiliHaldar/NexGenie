@@ -1,7 +1,5 @@
-click==8.1.7
-colorama==0.4.6
-gunicorn
-fastapi
-uvicorn
+fastapi==0.95.2
+gunicorn==23.0.0
+uvicorn==0.20.0
 google-generativeai
 python-dotenv

@@ -1,10 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import os
 import google.generativeai as genai
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import logging
+from fastapi.staticfiles import StaticFiles
 
 # Load environment variables from .env file
 load_dotenv()
@@ -20,6 +22,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static files (e.g., index.html)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Serve index.html at the root path
+@app.get("/")
+async def read_index():
+    return FileResponse("static/index.html")
 
 # Set your Gemini API key from environment variable
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')

@@ -60,7 +60,7 @@ async def process_query(request_body: RequestBody):
     
     try:
         # Timeout set to 4 seconds (less than Dialogflow's default timeout of 5 seconds)
-        response = await asyncio.wait_for(genai.GenerativeModel("gemini-1.5-flash").generate_content(prompt), timeout=4)
+        response = await asyncio.wait_for(genai.GenerativeModel("gemini-1.5-flash").generate_content(prompt), timeout=10)
         
         return {
             "fulfillmentMessages": [

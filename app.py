@@ -1,4 +1,3 @@
-import asyncio
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -46,22 +45,20 @@ logging.basicConfig(level=logging.INFO)
 @app.post("/process_query")
 async def process_query(request_body: RequestBody):
     code = request_body.queryResult.parameters.code
-    programming_languages = request_body.queryResult.parameters.programminglanguage
+    programminglanguage = request_body.queryResult.parameters.programminglanguage
 
-    if not programming_languages:
-        raise HTTPException(status_code=400, detail="No programming language provided")
-
-    programminglanguage = programming_languages[0]  # Assuming only one language is provided
-
-    prompt = (
-        f"Generate a {programminglanguage} code snippet that performs the following task: '{code}'. "
-        "The response should be formatted as a clean, well-structured code snippet, similar to how it would appear in a code editor."
-    )
-    
     try:
-        # Timeout set to 4 seconds (less than Dialogflow's default timeout of 5 seconds)
-        response = await asyncio.wait_for(genai.GenerativeModel("gemini-1.5-flash").generate_content(prompt), timeout=4)
+        # Create a generative model
+        model = genai.GenerativeModel("gemini-1.5-flash")
         
+        # Generate content based on the user's input
+        prompt = (
+            f"Generate a {programminglanguage} code snippet that performs the following task: '{code}'. "
+            "The response should be formatted as a clean, well-structured code snippet, similar to how it would appear in a code editor."
+        )
+        response = model.generate_content(prompt)
+        
+        # Return the generated text as a text message for Dialogflow
         return {
             "fulfillmentMessages": [
                 {
@@ -73,9 +70,6 @@ async def process_query(request_body: RequestBody):
                 }
             ]
         }
-    except asyncio.TimeoutError:
-        logging.error("API request timed out")
-        raise HTTPException(status_code=504, detail="API request timed out")
     except Exception as e:
-        logging.error(f"Error: {e}")
+        print(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

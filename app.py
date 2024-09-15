@@ -6,6 +6,7 @@ import google.generativeai as genai
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import logging
+from fastapi.responses import FileResponse
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,6 +16,11 @@ app = FastAPI()
 
 # Serve static files (including HTML) from the "static" directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Serve the index.html file from the static directory
+@app.get("/")
+async def root():
+    return FileResponse("static/index.html")
 
 # Add CORS middleware
 app.add_middleware(

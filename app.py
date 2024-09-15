@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import os
 import google.generativeai as genai
 from pydantic import BaseModel
@@ -11,6 +12,9 @@ load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI()
+
+# Serve static files (including HTML) from the "static" directory
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Add CORS middleware
 app.add_middleware(

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Chat Interface</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }
+        .chat-container { width: 60%; margin: 0 auto; margin-top: 50px; background: #ffffff; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        .chat-header { background: #008cba; color: #ffffff; padding: 15px; border-top-left-radius: 8px; border-top-right-radius: 8px; display: flex; align-items: center; }
+        .chat-header img { border-radius: 50%; width: 40px; height: 40px; margin-right: 10px; }
+        .chat-header h2 { margin: 0; }
+        .chat-box { padding: 10px; height: 400px; overflow-y: auto; display: flex; flex-direction: column; }
+        .chat-message { display: flex; align-items: flex-start; margin-bottom: 10px; }
+        .chat-message img { border-radius: 50%; width: 30px; height: 30px; margin-right: 10px; }
+        .chat-message.user { justify-content: flex-end; }
+        .chat-message.user .message-text { background-color: #d1e7dd; color: #000000; }
+        .chat-message.bot { justify-content: flex-start; }
+        .chat-message.bot .message-text { background-color: #e2e3e5; color: #000000; }
+        .message-text { padding: 10px; border-radius: 5px; max-width: 70%; word-wrap: break-word; white-space: pre-wrap; }
+        .chat-input { width: 100%; padding: 10px; border: none; border-top: 1px solid #ccc; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <img src="https://via.placeholder.com/40" alt="Bot Icon">
+        <h2>Chatbot</h2>
+    </div>
+    <div class="chat-box" id="chat-box"></div>
+    <input type="text" id="chat-input" class="chat-input" placeholder="Type your question here...">
+</div>
+
+<script>
+    document.getElementById("chat-input").addEventListener("keypress", async function (e) {
+        if (e.key === "Enter") {
+            const userInput = e.target.value;
+            if (userInput) {
+                appendMessage("User", userInput, false);
+                e.target.value = "";
+
+                // Send the user's input to the backend
+                const response = await fetch("/process_query", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        queryResult: {
+                            parameters: {
+                                code: userInput,
+                                programminglanguage: "python" // Example language, can be dynamic
+                            }
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                const botResponse = data.fulfillmentMessages[0].text.text[0];
+                appendMessage("Bot", botResponse, true); // Format as code if necessary
+            }
+        }
+    });
+
+    function appendMessage(sender, message, isCode = false) {
+        const chatBox = document.getElementById("chat-box");
+
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("chat-message");
+        messageDiv.classList.add(sender.toLowerCase());
+
+        const icon = document.createElement("img");
+        icon.src = sender === "User" ? "https://via.placeholder.com/30?text=U" : "https://via.placeholder.com/30?text=B";
+        messageDiv.appendChild(icon);
+
+        const textDiv = document.createElement("div");
+        textDiv.classList.add("message-text");
+        textDiv.textContent = message;
+
+        messageDiv.appendChild(textDiv);
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+    }
+</script>
+
+</body>
+</html>

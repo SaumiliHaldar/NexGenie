@@ -57,9 +57,6 @@ async def process_query(request_body: RequestBody):
             "The response should be formatted as a clean, well-structured code snippet, similar to how it would appear in a code editor."
         )
         response = model.generate_content(prompt)
-
-        # Wrap the generated code in triple backticks for code block format
-        code_snippet = f"```{programminglanguage}\n{response.text.strip()}\n```"
         
         # Return the generated text as a text message for Dialogflow
         return {
@@ -67,7 +64,7 @@ async def process_query(request_body: RequestBody):
                 {
                     "text": {
                         "text": [
-                            code_snippet
+                            response.text.strip()
                         ]
                     }
                 }

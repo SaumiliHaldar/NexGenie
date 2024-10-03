@@ -29,7 +29,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    
 )
 
 # Set your Gemini API key from environment variable

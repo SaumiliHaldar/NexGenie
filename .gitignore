@@ -1294,3 +1294,6 @@ venv/Lib/site-packages/uvicorn/supervisors/__pycache__/statreload.cpython-312.py
 venv/Lib/site-packages/uvicorn/supervisors/__pycache__/watchfilesreload.cpython-312.pyc
 venv/Lib/site-packages/uvicorn/supervisors/__pycache__/watchgodreload.cpython-312.pyc
 __pycache__/app.cpython-312.pyc
+venv/Lib/site-packages/anyio/_backends/__pycache__/__init__.cpython-312.pyc
+venv/Lib/site-packages/anyio/_backends/__pycache__/_asyncio.cpython-312.pyc
+venv/Lib/site-packages/click/__pycache__/_textwrap.cpython-312.pyc

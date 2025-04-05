@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexGenie</title>
+    <link rel="icon" href="https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-smiling-cute-robot-chat-bot-in-speech-bubble-png-image_5008700.png" type="image/png">
+    <style>
+        /* Body styles */
+        body {
+            background-color: #1D203E;
+        }
+        
+        /* Chatbot icon styling */
+        #chatbot-icon {
+            width: 60px;
+            height: 60px;
+            background-image: url('https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-smiling-cute-robot-chat-bot-in-speech-bubble-png-image_5008700.png');
+            background-size: cover;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            border-radius: 50%;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            z-index: 1000;
+            animation: moveUpDown 2s ease-in-out infinite; /* Added animation */
+        }
+
+        /* Animation keyframes for moving up and down */
+        @keyframes moveUpDown {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Dialogflow Messenger hidden initially */
+        df-messenger {
+            display: none;
+        }
+
+        /* Default message styling */
+        #default-message {
+            display: none;
+            position: fixed;
+            bottom: 60px;
+            right: 20px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Chatbot Icon -->
+    <div id="chatbot-icon"></div>
+
+    <!-- Dialogflow Messenger -->
+    <df-messenger
+        id="chatbot-iframe"
+        chat-icon="https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-smiling-cute-robot-chat-bot-in-speech-bubble-png-image_5008700.png"
+        intent="WELCOME"
+        chat-title="NexGenie"
+        agent-id="a1b893da-90ed-4680-9c3e-eb1d31faade6"
+        language-code="en"
+    ></df-messenger>
+
+    <!-- Default Message Display -->
+    <div id="default-message">Click here to start chat!</div>
+
+    <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+    <script>
+        // Get references to the elements
+        const chatbotIcon = document.getElementById('chatbot-icon');
+        const chatbotIframe = document.getElementById('chatbot-iframe');
+        const messageDiv = document.getElementById('default-message');
+
+        let botOpen = false; // Track if the bot is open to avoid rapid toggling
+
+        // Function to open the chatbot
+        function openChatbot() {
+            if (!botOpen) {
+                botOpen = true;
+                chatbotIframe.style.display = 'block';
+                chatbotIcon.style.display = 'none';
+                messageDiv.style.display = 'none';
+
+                // Add the custom default welcome message
+                injectWelcomeMessage();
+            }
+        }
+
+        // Function to close the chatbot
+        function closeChatbot() {
+            botOpen = false;
+            chatbotIframe.style.display = 'none';
+            chatbotIcon.style.display = 'block';
+            messageDiv.style.display = 'block';
+        }
+
+        // Function to inject a custom welcome message
+        function injectWelcomeMessage() {
+            const dfMessenger = document.querySelector('df-messenger');
+            const chatBox = dfMessenger.shadowRoot.querySelector('df-messenger-chat');
+            const messageContainer = chatBox.shadowRoot.querySelector('.messages-container');
+
+            const customMessage = document.createElement('div');
+            customMessage.className = 'user-message'; // Adjust class name if needed for styling
+            messageContainer.appendChild(customMessage);
+        }
+
+        // Add click event listeners
+        chatbotIcon.addEventListener('click', openChatbot);
+        messageDiv.addEventListener('click', openChatbot); // Clicking the message opens the chatbot
+
+        // Listen for the chatbot's 'df-messenger-loaded' event to show the message when the bot is ready
+        window.addEventListener('dfMessengerLoaded', function() {
+            messageDiv.style.display = 'block'; // Show the message when the bot is ready
+        });
+    </script>
+</body>
+</html>

@@ -48,8 +48,7 @@ class QueryResult(BaseModel):
 class RequestBody(BaseModel):
     queryResult: QueryResult
 
-
-
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 
 @app.post("/process_query")

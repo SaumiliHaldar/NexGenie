@@ -2,104 +2,102 @@
   "success": true,
   "courses": [
     {
+      "id": "67e3f70688949bd89178227a",
+      "name": "Complete Java Course: From Beginner to Advanced",
+      "description": "Complete Java Course: From Beginner to Advanced 🚀\n\nWelcome to the ultimate Java Programming Course, designed to take you from a complete beginner to an advanced Java developer! Whether you're just starting with programming or looking to enhance your Java skills, this course provides a comprehensive and hands-on learning experience.\n\nWhat You’ll Learn:\n✅ Introduction to Java – Basics, features, and setting up the development environment.\n✅ Java Syntax & Data Types – Variables, data types, operators, and control flow statements.\n✅ Object-Oriented Programming (OOP) – Classes, objects, inheritance, polymorphism, abstraction, and encapsulation.\n✅ Exception Handling & Debugging – Learn how to handle errors and debug effectively.\n✅ Java Collections Framework – Lists, Sets, Maps, and Queues for efficient data management.\n✅ Multithreading & Concurrency – Understand how to build efficient and parallel programs.\n✅ File Handling & I/O Operations – Read/write files and work with input/output streams.\n✅ JDBC & Database Connectivity – Connect Java applications with databases like MySQL.\n✅ Spring Framework & Web Development – Build real-world applications with Spring Boot.\n✅ Java for API Development – RESTful APIs, JSON handling, and integration.\n\nWhy Learn Java?\n🔹 Java is one of the most in-demand programming languages for software development, web applications, and Android development.\n🔹 It is platform-independent, meaning Java programs can run on any system with the JVM (Java Virtual Machine).\n🔹 Used by top tech companies, including Google, Amazon, and Microsoft.\n\nBy the end of this course, you’ll have strong Java programming skills and be able to build real-world projects confidently.\n\n💡 Enroll now and start your Java journey today! 🚀🔥",
       "thumbnail": {
         "public_id": "courses/tbamus3ojqo6c579fooo",
         "url": "https://res.cloudinary.com/drlhqtqeb/image/upload/v1742993158/courses/tbamus3ojqo6c579fooo.jpg"
       },
-      "id": "67e3f70688949bd89178227a",
-      "name": "Complete Java Course: From Beginner to Advanced ",
-      "description": "Complete Java Course: From Beginner to Advanced 🚀\n\nWelcome to the ultimate Java Programming Course, designed to take you from a complete beginner to an advanced Java developer! Whether you're just starting with programming or looking to enhance your Java skills, this course provides a comprehensive and hands-on learning experience.\n\nWhat You’ll Learn:\n✅ Introduction to Java – Basics, features, and setting up the development environment.\n✅ Java Syntax & Data Types – Variables, data types, operators, and control flow statements.\n✅ Object-Oriented Programming (OOP) – Classes, objects, inheritance, polymorphism, abstraction, and encapsulation.\n✅ Exception Handling & Debugging – Learn how to handle errors and debug effectively.\n✅ Java Collections Framework – Lists, Sets, Maps, and Queues for efficient data management.\n✅ Multithreading & Concurrency – Understand how to build efficient and parallel programs.\n✅ File Handling & I/O Operations – Read/write files and work with input/output streams.\n✅ JDBC & Database Connectivity – Connect Java applications with databases like MySQL.\n✅ Spring Framework & Web Development – Build real-world applications with Spring Boot.\n✅ Java for API Development – RESTful APIs, JSON handling, and integration.\n\nWhy Learn Java?\n🔹 Java is one of the most in-demand programming languages for software development, web applications, and Android development.\n🔹 It is platform-independent, meaning Java programs can run on any system with the JVM (Java Virtual Machine).\n🔹 Used by top tech companies, including Google, Amazon, and Microsoft.\n\nBy the end of this course, you’ll have strong Java programming skills and be able to build real-world projects confidently.\n\n💡 Enroll now and start your Java journey today! 🚀🔥",
-      "categories": "Web Deveopment",
+      "categories": "Web Development",
       "price": 499,
       "estimatedPrice": 1000,
-      "tags": [
-        "JAVA,FULL SATCK"
-      ],
-      "level": "Begineer",
+      "tags": ["JAVA", "FULL STACK"],
+      "level": "Beginner",
       "demoUrl": "800eb53cc14a40ce83b03aa445a67b60",
       "benefits": [
         {
-          "title": " Comprehensive Learning Path – This course covers everything from basics to advanced topics, including Java syntax, OOP concepts, multithreading, database connectivity, and web development. Whether you're a beginner or an experienced coder, you'll find valuable knowledge.",
-          "_id": "67e3f70688949bd89178227b"
+          "_id": "67e3f70688949bd89178227b",
+          "title": "Comprehensive Learning Path – This course covers everything from basics to advanced topics, including Java syntax, OOP concepts, multithreading, database connectivity, and web development."
         },
         {
-          "title": "Hands-on Practical Experience – You will work on real-world projects, coding exercises, and assignments to strengthen your Java skills. This practical approach ensures you can apply your learning in real development scenarios.",
-          "_id": "67e3f70688949bd89178227c"
+          "_id": "67e3f70688949bd89178227c",
+          "title": "Hands-on Practical Experience – You will work on real-world projects, coding exercises, and assignments to strengthen your Java skills."
         },
         {
-          "title": " Career Advancement & Job Opportunities – Java is widely used in enterprise applications, Android development, and backend systems. Mastering Java will open doors to high-paying jobs in software development, web applications, and API development.",
-          "_id": "67e3f70688949bd89178227d"
+          "_id": "67e3f70688949bd89178227d",
+          "title": "Career Advancement & Job Opportunities – Java is widely used in enterprise applications, Android development, and backend systems."
         },
         {
-          "title": "Industry-Relevant & Future-Proof – Java is a stable, high-demand programming language used by major tech companies like Google, Amazon, and Netflix. Learning Java ensures long-term career growth in the ever-evolving tech industry.",
-          "_id": "67e3f70688949bd89178227e"
+          "_id": "67e3f70688949bd89178227e",
+          "title": "Industry-Relevant & Future-Proof – Java is a stable, high-demand programming language used by major tech companies like Google, Amazon, and Netflix."
         }
       ],
-      "prereqisites": [
+      "prerequisites": [
         {
-          "title": "Basic Computer Knowledge – You should have a basic understanding of how a computer works, including installing software and using text editors.",
-          "_id": "67e3f70688949bd89178227f"
+          "_id": "67e3f70688949bd89178227f",
+          "title": "Basic Computer Knowledge – You should have a basic understanding of how a computer works, including installing software and using text editors."
         },
         {
-          "title": "Logical Thinking & Problem-Solving Skills – Programming requires a logical mindset. If you're comfortable with basic math and problem-solving, you're ready to learn Java.",
-          "_id": "67e3f70688949bd891782280"
+          "_id": "67e3f70688949bd891782280",
+          "title": "Logical Thinking & Problem-Solving Skills – Programming requires a logical mindset. If you're comfortable with basic math and problem-solving, you're ready to learn Java."
         },
         {
-          "title": "Familiarity with Any Programming Language (Optional) – While not required, having experience with Python, C, or any other programming language can make learning Java easier.",
-          "_id": "67e3f70688949bd891782281"
+          "_id": "67e3f70688949bd891782281",
+          "title": "Familiarity with Any Programming Language (Optional) – Having experience with Python, C, or any other language can make learning Java easier."
         },
         {
-          "title": "A Laptop/PC with Java Installed – You need to install Java Development Kit (JDK) and an IDE like IntelliJ IDEA or Eclipse to write and run Java programs. Instructions for setup are covered in the course.",
-          "_id": "67e3f70688949bd891782282"
+          "_id": "67e3f70688949bd891782282",
+          "title": "A Laptop/PC with Java Installed – You need to install Java Development Kit (JDK) and an IDE like IntelliJ IDEA or Eclipse. Instructions are covered in the course."
         }
       ],
       "courseData": [
         {
-          "videoUrl": "ef42c8143f0f4e61a13e14cf95a49cd9",
+          "_id": "67e3f70688949bd891782283",
           "title": "What is Java",
           "videoSection": "BASICS OF JAVA",
-          "description": "Introduction to Java | Beginner-Friendly Guide\n\nWelcome to this introductory video on Java programming! 🚀 Java is one of the most powerful and widely used programming languages, known for its versatility, portability, and strong community support. Whether you're a beginner or someone looking to refresh your Java skills, this video will provide you with a solid foundation.\n\nIn this video, we’ll cover:\n✅ What is Java and why it's so popular?\n✅ Key features of Java, including platform independence, object-oriented programming, and security.\n✅ How Java works with the JVM (Java Virtual Machine).\n✅ Real-world applications of Java in web development, mobile apps, enterprise solutions, and more.\n✅ Basic syntax and first Java program demo.\n\nJava is used by top tech companies and is a must-have skill for software developers. By the end of this video, you’ll understand why Java is an essential language to learn and how it plays a crucial role in modern development.\n\nDon't forget to like, share, and subscribe for more Java tutorials! 💡🔥\n\n#Java #Programming #LearnJava #CodingForBeginners",
+          "videoUrl": "ef42c8143f0f4e61a13e14cf95a49cd9",
           "videoLength": 19,
+          "description": "Introduction to Java | Beginner-Friendly Guide\n\nThis video introduces Java and its key features such as platform independence, OOP, JVM, and real-world applications. It also includes a basic syntax overview and first program demo.",
           "links": [
             {
+              "_id": "67e3f70688949bd891782284",
               "title": "Github",
-              "url": "www.github.com",
-              "_id": "67e3f70688949bd891782284"
+              "url": "https://www.github.com"
             }
           ],
-          "_id": "67e3f70688949bd891782283",
           "questions": []
         },
         {
-          "videoUrl": "f725626cdd8d47788fa6a40dd6b2efc5",
+          "_id": "67e3f70688949bd891782285",
           "title": "What is Variables",
           "videoSection": "BASICS OF JAVA",
-          "description": "Java Variables Explained | Beginner’s Guide 🚀\n\nWelcome to this video on Java Variables, where you'll learn one of the most fundamental concepts in Java programming. Variables are used to store data in a Java program, making them essential for writing dynamic and flexible code.\n\nWhat You’ll Learn in This Video:\n✅ What are variables and why they are important in Java?\n✅ Different types of variables: Local, Instance, and Static variables.\n✅ Understanding Java’s primitive data types like int, double, char, and boolean.\n✅ How to declare and initialize variables in Java.\n✅ Naming conventions and best practices for using variables effectively.\n✅ Live coding examples to help you understand variable usage in real-world applications.\n\nWhy Should You Learn About Variables?\n🔹 Foundation of Java Programming – Almost every Java program uses variables to store and manipulate data.\n🔹 Helps in Writing Efficient Code – Understanding how to use variables correctly improves code readability and maintainability.\n🔹 Essential for Advanced Topics – Concepts like loops, functions, and object-oriented programming rely on variable usage.\n\nBy the end of this video, you’ll have a clear understanding of Java variables and be able to use them confidently in your programs.\n\nDon’t forget to like, share, and subscribe for more Java tutorials! 🚀🔥\n\n#Java #Variables #JavaForBeginners #Programming #LearnJava",
+          "videoUrl": "f725626cdd8d47788fa6a40dd6b2efc5",
           "videoLength": 43,
+          "description": "Java Variables Explained | Beginner’s Guide 🚀\n\nThis video explains Java variables, types (local, instance, static), primitive data types, naming conventions, and includes coding examples.",
           "links": [
             {
+              "_id": "67e3f70688949bd891782286",
               "title": "Github",
-              "url": "www.github.com",
-              "_id": "67e3f70688949bd891782286"
+              "url": "https://www.github.com"
             }
           ],
-          "_id": "67e3f70688949bd891782285",
           "questions": []
         },
         {
-          "videoUrl": "ef42c8143f0f4e61a13e14cf95a49cd9",
-          "title": "Conditional Statements ",
+          "_id": "67e3f70688949bd891782287",
+          "title": "Conditional Statements",
           "videoSection": "CONDITIONAL & LOOPS",
-          "description": "Java Variables Explained | Beginner’s Guide 🚀\n\nWelcome to this video on Java Variables, where you'll learn one of the most fundamental concepts in Java programming. Variables are used to store data in a Java program, making them essential for writing dynamic and flexible code.\n\nWhat You’ll Learn in This Video:\n✅ What are variables and why they are important in Java?\n✅ Different types of variables: Local, Instance, and Static variables.\n✅ Understanding Java’s primitive data types like int, double, char, and boolean.\n✅ How to declare and initialize variables in Java.\n✅ Naming conventions and best practices for using variables effectively.\n✅ Live coding examples to help you understand variable usage in real-world applications.\n\nWhy Should You Learn About Variables?\n🔹 Foundation of Java Programming – Almost every Java program uses variables to store and manipulate data.\n🔹 Helps in Writing Efficient Code – Understanding how to use variables correctly improves code readability and maintainability.\n🔹 Essential for Advanced Topics – Concepts like loops, functions, and object-oriented programming rely on variable usage.\n\nBy the end of this video, you’ll have a clear understanding of Java variables and be able to use them confidently in your programs.\n\nDon’t forget to like, share, and subscribe for more Java tutorials! 🚀🔥\n\n#Java #Variables #JavaForBeginners #Programming #LearnJava",
+          "videoUrl": "ef42c8143f0f4e61a13e14cf95a49cd9",
           "videoLength": 24,
+          "description": "This video covers conditional statements in Java, helping you understand how to control the flow of execution using if, else, and switch statements.",
           "links": [
             {
+              "_id": "67e3f70688949bd891782288",
               "title": "Github",
-              "url": "www.github.com",
-              "_id": "67e3f70688949bd891782288"
+              "url": "https://www.github.com"
             }
           ],
-          "_id": "67e3f70688949bd891782287",
           "questions": []
         }
       ],

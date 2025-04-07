@@ -182,10 +182,7 @@ def answer_from_csv(query: str, k: int = 3) -> str:
         summary_text = "Here are some top course recommendations based on your query."
 
     # Return as a structured dictionary
-    return {
-        "summary": summary_text,
-        "courses": results
-    }
+    return [summary_text, *results]
 
 
 

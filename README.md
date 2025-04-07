@@ -33,11 +33,12 @@ NexGenie is designed to enhance the LearnNexus e-learning portal by offering a c
 
 - **FastAPI**: Web framework for building high-performance APIs.
 - **Python**: Core programming language for development.
-- **Generative AI**: Google Gemini API for generating code snippets and solutions.
-- **Machine Learning Libraries**: TensorFlow, PyTorch, Scikit-learn for model training.
-- **NLP Libraries**: NLTK, spaCy, Transformers for natural language processing.
-- **Dialogflow ES**: For creating conversational agents and integrating with the chatbot.
-- **Database and Caching**: MongoDB for data storage, MySQL for relational data, Redis for caching.
+- **React.js**: Frontend framework for building dynamic user interfaces.
+- **Google Gemini API**: Generates accurate and structured code snippets based on user prompts.
+- **SentenceTransformers**: Generates semantic embeddings for course recommendations.
+- **FAISS**: Provides fast similarity search over course embeddings.
+- **Dialogflow ES**: Manages conversational interactions and user intent parsing.
+- **Database and Caching**: MongoDB for data storage, Redis for caching.
 
 ## Installation
 
@@ -72,37 +73,23 @@ To set up NexGenie locally, follow these steps:
 
 ## Machine Learning Models
 
-NexGenie utilizes a range of machine learning models to deliver a robust and interactive experience:
+NexGenie utilizes a range of intelligent AI tools and services to deliver a responsive, contextual, and interactive user experience:
 
 ### NLP Models
-- **BERT (Bidirectional Encoder Representations from Transformers)**: For deep understanding of natural language queries.
-- **RoBERTa (Robustly Optimized BERT Pretraining Approach)**: For enhanced language comprehension and handling diverse queries.
-- **Transformers**: For tasks such as text classification and language translation.
-- **spaCy**: For tokenization, entity recognition, and language modeling.
+- **SentenceTransformer (`all-MiniLM-L6-v2`)**: For generating semantic embeddings of user queries and course descriptions to enable contextual understanding.
+- **FAISS (Facebook AI Similarity Search)**: For efficient similarity search over embedded course data, ensuring fast and relevant course recommendations.
 
 ### Conversational AI Models
-- **Seq2Seq (Sequence-to-Sequence) Models**: For generating coherent and contextually appropriate responses.
-- **Encoder-Decoder Models**: For accurately interpreting and responding to user queries.
-- **Generative Adversarial Networks (GANs)**: For creating empathetic and personalized responses.
+- **Dialogflow ES**: Manages intents and dialog flows, structures user input, and integrates seamlessly with the FastAPI backend to handle complex queries and parameters.
 
 ### Code Understanding and Generation Models
-- **CodeBERT (Code Embeddings from Transformers)**: For understanding coding concepts and languages.
-- **Graph Neural Networks (GNNs)**: For analyzing and understanding code structures and relationships.
-- **Sequence-to-Sequence Models**: For generating code snippets and solutions.
-- **Google Gemini API**: For generating well-structured code snippets based on user inputs.
-
-### Problem-Solving Models
-- **Decision Trees**: For identifying problem types and suggesting solutions.
-- **Random Forest**: For classifying problems and recommending approaches.
-- **Neural Networks (e.g., Multilayer Perceptron)**: For solving complex problems.
-
-### Multilingual Support Models
-- **Machine Translation Models**: For translating user queries and chatbot responses across different languages.
-- **Language Identification Models**: For detecting and adapting to user language preferences.
+- **Google Gemini API (`gemini-1.5-flash`)**: For generating clean, structured, and language-specific code snippets based on user prompts.
 
 These models enable NexGenie to:
-- Understand and process complex coding queries and problems.
-- Provide formal, professional, and empathetic responses.
+- Understand and process natural language queries using semantic similarity.
+- Provide instant and relevant course recommendations based on context.
+- Generate accurate and professional code snippets tailored to user input.
+- Offer a conversational interface using Dialogflow for an enhanced user experience.
 - Support multiple languages and offer personalized assistance to users.
 
 ## Contributing

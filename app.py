@@ -140,17 +140,38 @@ def answer_from_csv(query: str, k: int = 3) -> str:
 
     df = pd.read_csv(csv_path)  # Reload CSV to access structured data
     results = []
+
+    # Initialize Gemini model (done only once for reuse)
+    model = genai.GenerativeModel("gemini-1.5-flash")
+
     for idx in I[0]:
         row = df.iloc[idx]
+
+        # --- Summarize long fields using Gemini ---
+        try:
+            description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
+            benefits_prompt = f"Summarize the following course benefits in 2 lines max:\n\n{row['Benefits']}"
+            prerequisites_prompt = f"Summarize the prerequisites below briefly:\n\n{row['Prerequisites']}"
+
+            summarized_description = model.generate_content(description_prompt).text.strip()
+            summarized_benefits = model.generate_content(benefits_prompt).text.strip()
+            summarized_prerequisites = model.generate_content(prerequisites_prompt).text.strip()
+        except Exception as e:
+            # Fallback in case of API failure
+            summarized_benefits = row['Benefits']
+            summarized_prerequisites = row['Prerequisites']
+
         result = (
             f"Course Name: {row['Name']}\n"
             f"Price: {row['Price']}\n"
             f"Level: {row['Level']}\n"
-            f"Prerequisites: {row['Prerequisites']}\n"
-            f"Benefits: {row['Benefits']}"
+            f"Prerequisites: {summarized_prerequisites}\n"
+            f"Benefits: {summarized_benefits}"
         )
         results.append(result)
+
     return "\n\n---\n\n".join(results)
+
 
 
 # --- New Route ---

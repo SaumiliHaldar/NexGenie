@@ -138,8 +138,20 @@ def answer_from_csv(query: str, k: int = 3) -> str:
     query_vec = embedder.encode([query])
     D, I = index.search(query_vec, k)
 
-    results = [course_chunks[i] for i in I[0]]
-    return "\n---\n".join(results)
+    df = pd.read_csv(csv_path)  # Reload CSV to access structured data
+    results = []
+    for idx in I[0]:
+        row = df.iloc[idx]
+        result = (
+            f"Course Name: {row['Name']}\n"
+            f"Price: {row['Price']}\n"
+            f"Level: {row['Level']}\n"
+            f"Prerequisites: {row['Prerequisites']}\n"
+            f"Benefits: {row['Benefits']}"
+        )
+        results.append(result)
+    return "\n\n---\n\n".join(results)
+
 
 # --- New Route ---
 @app.post("/ask_course")

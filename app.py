@@ -133,7 +133,7 @@ load_courses_data()
 # --- Helper: Answer based on CSV ---
 def answer_from_csv(query: str, k: int = 3) -> str:
     if index is None or not course_chunks:
-        return "Course data not loaded."
+        return {"summary": "Course data not loaded.", "courses": []}
 
     query_vec = embedder.encode([query])
     D, I = index.search(query_vec, k)
@@ -158,19 +158,34 @@ def answer_from_csv(query: str, k: int = 3) -> str:
             summarized_prerequisites = model.generate_content(prerequisites_prompt).text.strip()
         except Exception as e:
             # Fallback in case of API failure
+            summarized_description = row['Description']
             summarized_benefits = row['Benefits']
             summarized_prerequisites = row['Prerequisites']
+        
+        course_data = {
+            "name": str(row['Name']),
+            "description": summarized_description,
+            "price": str(row['Price']),
+            "level": str(row['Level']),
+            "benefits": summarized_benefits,
+            "prerequisites": summarized_prerequisites
+        }
+        results.append(course_data)
+    
+    # --- Add a brief summary of the matched courses using Gemini ---
+    try:
+        # Create a text block to summarize
+        course_list_text = "\n\n".join([f"{c['name']}: {c['benefits']}" for c in results])
+        summary_prompt = f"Based on the following list of course names and benefits, provide a short summary (1-2 lines) highlighting what a learner might gain:\n\n{course_list_text}"
+        summary_text = model.generate_content(summary_prompt).text.strip()
+    except Exception:
+        summary_text = "Here are some top course recommendations based on your query."
 
-        result = (
-            f"Course Name: {row['Name']}\n"
-            f"Price: {row['Price']}\n"
-            f"Level: {row['Level']}\n"
-            f"Prerequisites: {summarized_prerequisites}\n"
-            f"Benefits: {summarized_benefits}"
-        )
-        results.append(result)
-
-    return "\n\n---\n\n".join(results)
+    # Return as a structured dictionary
+    return {
+        "summary": summary_text,
+        "courses": results
+    }
 
 
 

@@ -61,7 +61,7 @@ To set up NexGenie locally, follow these steps:
     ```
 5. **Run the application**:
     ```bash
-    uvicorn app:app --host 0.0.0.0 --port 8000
+      uvicorn app:app --reload
     ```
 
 ## Usage

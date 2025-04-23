@@ -12,10 +12,22 @@ collection = db['courses']
 with open('courses.json', 'r', encoding='utf-8') as file:
     course_data = json.load(file)
 
-# Insert data (assumes it's a list of courses)
-if isinstance(course_data, list):
-    result = collection.insert_many(course_data)
-    print(f"Inserted {len(result.inserted_ids)} documents.")
-else:
-    result = collection.insert_one(course_data)
-    print("Inserted 1 document.")
+# Ensure it's always a list
+if not isinstance(course_data, list):
+    course_data = [course_data]
+
+inserted_count = 0
+skipped_count = 0
+
+for course in course_data:
+    course_name = course.get("name")
+
+    # Skip if course name already exists
+    if collection.find_one({"name": course_name}):
+        skipped_count += 1
+        continue
+
+    collection.insert_one(course)
+    inserted_count += 1
+
+print(f"✅ Inserted {inserted_count} new course(s). Skipped {skipped_count} duplicate(s).")

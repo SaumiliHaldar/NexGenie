@@ -14,11 +14,29 @@ import faiss
 from sentence_transformers import SentenceTransformer
 from fastapi import Request
 
+# --- Imports for executing .py files within same directory ---
+import threading
+import subprocess
+import sys
+import logging
+
 # Load environment variables from .env file
 load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI()
+
+
+# --- Excecute .py files within same directory ---
+@app.on_event("startup")
+def startup_tasks():
+    def run_scripts():
+        subprocess.run([sys.executable, "courses_db.py"])
+        subprocess.run([sys.executable, "courses_csv_maker.py"])
+        logging.info("✅ Both scripts executed successfully.")
+    
+    threading.Thread(target=run_scripts).start()
+
 
 # Serve static files (including HTML) from the "static" directory
 app.mount("/static", StaticFiles(directory="static"), name="static")

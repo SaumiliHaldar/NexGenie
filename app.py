@@ -221,5 +221,23 @@ async def ask_course(request: Request):
     if not query:
         return {"error": "No query provided."}
     
-    answer = answer_from_csv(query)
-    return {"answer": answer}
+    # Get the results from the CSV search
+    raw = answer_from_csv(query)
+
+    # Check if raw is empty or invalid
+    if not raw or len(raw) < 2:  # Ensure that raw has at least the summary and one course
+        return {"error": "No courses found matching the query."}
+
+    # The first element in raw is the summary
+    summary = raw[0]
+    seen = set()  # To track unique courses by name
+    unique_courses = [summary]  # Start with the summary in the results
+
+    # Iterate over the remaining courses in raw (skipping the summary)
+    for course in raw[1:]:
+        if course["name"] not in seen:
+            seen.add(course["name"])  # Add course name to the seen set
+            unique_courses.append(course)  # Add the course to the final list
+
+    # Return the final list of unique courses, including the summary
+    return {"answer": unique_courses}

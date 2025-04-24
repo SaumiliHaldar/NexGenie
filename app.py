@@ -1,12 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 import os
 import google.generativeai as genai
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import logging
-from fastapi.responses import FileResponse
+# from fastapi.staticfiles import StaticFiles
+# from fastapi.responses import FileResponse
 
 # --- Imports for CSV QA System ---
 import pandas as pd
@@ -33,23 +33,26 @@ def startup_tasks():
     def run_scripts():
         subprocess.run([sys.executable, "courses_db.py"])
         subprocess.run([sys.executable, "courses_csv_maker.py"])
-        logging.info("✅ Both scripts executed successfully.")
+        logging.info("✅ Both scripts executed successfully.\n")
     
     threading.Thread(target=run_scripts).start()
 
 
 # Serve static files (including HTML) from the "static" directory
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Serve the index.html file from the static directory
-@app.get("/")
-async def root():
-    return FileResponse("static/index.html")
+# @app.get("/")
+# async def root():
+#     return FileResponse("static/index.html")
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust as necessary for security
+    allow_origins=[
+        "https://nexgenie.vercel.app", 
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -75,6 +78,8 @@ class RequestBody(BaseModel):
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
+
+# --- Process General Query and Coding Questions ---
 @app.post("/process_query")
 async def process_query(request_body: RequestBody):
     code = request_body.queryResult.parameters.code
@@ -194,7 +199,11 @@ def answer_from_csv(query: str, k: int = 3) -> str:
     try:
         # Create a text block to summarize
         course_list_text = "\n\n".join([f"{c['name']}: {c['benefits']}" for c in results])
-        summary_prompt = f"Based on the following list of course names and benefits, provide a short summary (1-2 lines) highlighting what a learner might gain:\n\n{course_list_text}"
+        summary_prompt = (
+            f"Write a 1-2 line summary for someone interested in '{query}', "
+            f"based on the following course benefits:\n\n{course_list_text}.\n\n"
+            f"Make sure to clearly mention '{query}' in the summary."
+        )
         summary_text = model.generate_content(summary_prompt).text.strip()
     except Exception:
         summary_text = "Here are some top course recommendations based on your query."
@@ -204,7 +213,7 @@ def answer_from_csv(query: str, k: int = 3) -> str:
 
 
 
-# --- New Route ---
+# --- Ask Course Route ---
 @app.post("/ask_course")
 async def ask_course(request: Request):
     data = await request.json()

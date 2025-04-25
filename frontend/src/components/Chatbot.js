@@ -32,49 +32,7 @@ const Chatbot = () => {
         }
     }, [isOpen]); // Trigger effect when isOpen changes
 
-    // const sendMessage = async () => {
-    //     if (input.trim() === '') return;
-
-    //     const userMessage = { text: input, sender: 'user' };
-    //     setMessages((prev) => [...prev, userMessage]);
-    //     setInput('');
-    //     setLoading(true);  // Set loading state to true to show typing message
-
-    //     // Add typing indicator for bot
-    //     const typingIndicator = { text: 'typing...', sender: 'bot' };
-    //     setMessages((prev) => [...prev, typingIndicator]);
-
-    //     try {
-    //         const response = await axios.post('https://nexgenie.onrender.com/process_query', {
-    //             queryResult: {
-    //                 parameters: {
-    //                     code: input,
-    //                     programminglanguage: '',
-    //                 },
-    //             },
-    //         });
-
-    //         // Remove typing indicator once response is received
-    //         setMessages((prev) => prev.filter(msg => msg.text !== 'typing...'));
-
-    //         const botMessages = response.data.fulfillmentMessages.map((msg) => ({
-    //             text: msg.text.text[0],
-    //             sender: 'bot',
-    //         }));
-            
-    //         setMessages((prev) => [...prev, ...botMessages]);
-    //     } catch (error) {
-    //         console.error('Error sending message:', error);
-    //         setMessages((prev) => [
-    //             ...prev,
-    //             { text: 'Sorry, something went wrong. Please try again.', sender: 'bot' },
-    //         ]);
-    //     } finally {
-    //         setLoading(false);
-    //         scrollToBottom();
-    //     }
-    // };
-
+    
     const sendMessage = async () => {
         if (input.trim() === '') return;
     
@@ -95,7 +53,7 @@ const Chatbot = () => {
     
             if (isCourseQuery) {
                 // If it's a course query, hit the ask_course endpoint
-                response = await axios.post('http://127.0.0.1:8000/ask_course', {
+                response = await axios.post('https://nexgenie.onrender.com/ask_course', {
                     query: input
                 });
     

@@ -31,9 +31,9 @@ app = FastAPI()
 @app.on_event("startup")
 def startup_tasks():
     def run_scripts():
-        subprocess.run([sys.executable, "courses_db.py"])
+        # subprocess.run([sys.executable, "courses_db.py"])
         subprocess.run([sys.executable, "courses_csv_maker.py"])
-        logging.info("✅ Both scripts executed successfully.\n")
+        logging.info("✅ Scripts executed successfully.\n")
     
     threading.Thread(target=run_scripts).start()
 

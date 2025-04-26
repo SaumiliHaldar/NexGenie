@@ -50,6 +50,10 @@ def startup_tasks():
 async def root():
     return {"message": "Hello, User!"}
 
+@app.get("/healthz")
+async def health_check():
+    return {"status": "ok"}
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,

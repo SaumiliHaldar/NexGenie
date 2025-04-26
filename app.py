@@ -128,7 +128,8 @@ async def process_query(request_body: RequestBody):
 
 # --- Load and Embed Courses CSV ---
 csv_path = "courses.csv"
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# embedder = SentenceTransformer("all-MiniLM-L6-v2")
+embedder = SentenceTransformer("paraphrase-MiniLM-L6-v2")
 
 # Store data and index
 course_chunks = []

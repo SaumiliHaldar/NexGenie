@@ -13,6 +13,8 @@ import pandas as pd
 import faiss
 from sentence_transformers import SentenceTransformer
 from fastapi import Request
+from courses_csv_maker import get_courses_list
+import re
 
 # --- Imports for executing .py files within same directory ---
 import threading
@@ -164,64 +166,157 @@ Prerequisites: {row['Prerequisites']}"""
 # Call once on startup
 load_courses_data()
 
+def extract_keywords(query: str) -> list:
+    query = query.lower()
+    stop_words = set([
+        "what", "which", "tell", "me", "about", "find", "show", "give", "available", 
+        "courses", "course", "are", "on", "our", "portal", "the", "is", "for", 
+        "do", "you", "have", "any", "a", "an", "i", "want", "to", "learn", "best"
+    ])
+    tokens = re.findall(r'\w+', query)
+    keywords = [token for token in tokens if token not in stop_words]
+    return keywords
+
 # --- Helper: Answer based on CSV ---
-def answer_from_csv(query: str, k: int = 3) -> str:
+def answer_from_csv(query: str, k: int = 3) -> list:
     if index is None or not course_chunks:
         return {"summary": "Course data not loaded.", "courses": []}
-
-    query_vec = embedder.encode([query])
-    D, I = index.search(query_vec, k)
-
-    df = pd.read_csv(csv_path)  # Reload CSV to access structured data
-    results = []
-
-    # Initialize Gemini model (done only once for reuse)
-    model = genai.GenerativeModel("gemini-1.5-flash")
-
-    for idx in I[0]:
-        row = df.iloc[idx]
-
-        # --- Summarize long fields using Gemini ---
-        try:
-            description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
-            benefits_prompt = f"Summarize the following course benefits in 2 lines max:\n\n{row['Benefits']}"
-            prerequisites_prompt = f"Summarize the prerequisites below briefly:\n\n{row['Prerequisites']}"
-
-            summarized_description = model.generate_content(description_prompt).text.strip()
-            summarized_benefits = model.generate_content(benefits_prompt).text.strip()
-            summarized_prerequisites = model.generate_content(prerequisites_prompt).text.strip()
-        except Exception as e:
-            # Fallback in case of API failure
-            summarized_description = row['Description']
-            summarized_benefits = row['Benefits']
-            summarized_prerequisites = row['Prerequisites']
-        
-        course_data = {
-            "name": str(row['Name']),
-            "description": summarized_description,
-            "price": str(row['Price']),
-            "level": str(row['Level']),
-            "benefits": summarized_benefits,
-            "prerequisites": summarized_prerequisites
-        }
-        results.append(course_data)
     
-    # --- Add a brief summary of the matched courses using Gemini ---
-    try:
-        # Create a text block to summarize
-        course_list_text = "\n\n".join([f"{c['name']}: {c['benefits']}" for c in results])
-        summary_prompt = (
-            f"Write a 1-2 line summary for someone interested in '{query}', "
-            f"based on the following course benefits:\n\n{course_list_text}.\n\n"
-            f"Make sure to clearly mention '{query}' in the summary."
-        )
-        summary_text = model.generate_content(summary_prompt).text.strip()
-    except Exception:
-        summary_text = "Here are some top course recommendations based on your query."
+    # Check if the query is just asking for "courses"
+    query_keywords = extract_keywords(query)
+    if len(query_keywords) == 1 and query_keywords[0] in ["courses", "course"]:
+        # User is asking for all courses, so return all without filtering
+        df = pd.read_csv(csv_path)  # Reload CSV to access structured data
 
-    # Return as a structured dictionary
-    return [summary_text, *results]
+        results = []
+        # Initialize Gemini model (done only once for reuse)
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
+        for _, row in df.iterrows():
+            try:
+                description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
+                benefits_prompt = f"Summarize the following course benefits in 2 lines max:\n\n{row['Benefits']}"
+                prerequisites_prompt = f"Summarize the prerequisites below briefly:\n\n{row['Prerequisites']}"
+
+                summarized_description = model.generate_content(description_prompt).text.strip()
+                summarized_benefits = model.generate_content(benefits_prompt).text.strip()
+                summarized_prerequisites = model.generate_content(prerequisites_prompt).text.strip()
+            except Exception as e:
+                summarized_description = row['Description']
+                summarized_benefits = row['Benefits']
+                summarized_prerequisites = row['Prerequisites']
+
+            course_data = {
+                "name": str(row['Name']),
+                "description": summarized_description,
+                "price": str(row['Price']),
+                "level": str(row['Level']),
+                "benefits": summarized_benefits,
+                "prerequisites": summarized_prerequisites
+            }
+            results.append(course_data)
+
+        # --- Add a brief summary of the matched courses using Gemini ---
+        try:
+            course_list_text = "\n\n".join([f"{c['name']}: {c['benefits']}" for c in results])
+            summary_prompt = (
+                f"Write a 1-2 line summary for someone interested in 'courses', "
+                f"based on the following course benefits:\n\n{course_list_text}.\n\n"
+            )
+            summary_text = model.generate_content(summary_prompt).text.strip()
+        except Exception:
+            summary_text = "Here are some top course recommendations."
+
+        return [summary_text, *results]
+
+    else:
+        # If the query contains keywords, filter the courses based on the keywords
+        df = pd.read_csv(csv_path)  # Reload CSV to access structured data
+
+        # Step 1: First extract keywords
+        keywords = extract_keywords(query)
+
+        # Step 2: Filter courses based on Tags
+        filtered_df = pd.DataFrame()
+        for keyword in keywords:
+            temp = df[df['Tags'].str.contains(keyword, case=False, na=False)]
+            filtered_df = pd.concat([filtered_df, temp])
+
+        filtered_df = filtered_df.drop_duplicates()
+
+        if filtered_df.empty:
+            return {"summary": "No courses found matching your query.", "courses": []}
+
+        # Step 3: Now embed filtered courses
+        filtered_course_chunks = []
+        filtered_metadata = []
+        for _, row in filtered_df.iterrows():
+            chunk = f"""Course: {row['Name']}
+Description: {row['Description']}
+Tags: {row['Tags']}
+Category: {row['Category']}
+Level: {row['Level']}
+Price: {row['Price']}
+Benefits: {row['Benefits']}
+Prerequisites: {row['Prerequisites']}"""
+            filtered_course_chunks.append(chunk)
+            filtered_metadata.append(row['Name'])
+
+        if not filtered_course_chunks:
+            return {"summary": "No relevant courses found.", "courses": []}
+
+        embeddings = embedder.encode(filtered_course_chunks, convert_to_tensor=False)
+        temp_index = faiss.IndexFlatL2(embeddings[0].shape[0])
+        temp_index.add(embeddings)
+
+        query_vec = embedder.encode([query])
+        D, I = temp_index.search(query_vec, min(k, len(filtered_course_chunks)))
+
+        results = []
+
+        # Initialize Gemini model (done only once for reuse)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
+        for idx in I[0]:
+            if idx >= len(filtered_df):
+                continue
+            row = filtered_df.iloc[idx]
+
+            try:
+                description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
+                benefits_prompt = f"Summarize the following course benefits in 2 lines max:\n\n{row['Benefits']}"
+                prerequisites_prompt = f"Summarize the prerequisites below briefly:\n\n{row['Prerequisites']}"
+
+                summarized_description = model.generate_content(description_prompt).text.strip()
+                summarized_benefits = model.generate_content(benefits_prompt).text.strip()
+                summarized_prerequisites = model.generate_content(prerequisites_prompt).text.strip()
+            except Exception as e:
+                summarized_description = row['Description']
+                summarized_benefits = row['Benefits']
+                summarized_prerequisites = row['Prerequisites']
+
+            course_data = {
+                "name": str(row['Name']),
+                "description": summarized_description,
+                "price": str(row['Price']),
+                "level": str(row['Level']),
+                "benefits": summarized_benefits,
+                "prerequisites": summarized_prerequisites
+            }
+            results.append(course_data)
+
+        try:
+            course_list_text = "\n\n".join([f"{c['name']}: {c['benefits']}" for c in results])
+            summary_prompt = (
+                f"Write a 1-2 line summary for someone interested in '{query}', "
+                f"based on the following course benefits:\n\n{course_list_text}.\n\n"
+                f"Make sure to clearly mention '{query}' in the summary."
+            )
+            summary_text = model.generate_content(summary_prompt).text.strip()
+        except Exception:
+            summary_text = "Here are some top course recommendations based on your query."
+
+        return [summary_text, *results]
 
 
 # --- Ask Course Route ---

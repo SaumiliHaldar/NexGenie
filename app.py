@@ -46,6 +46,10 @@ def startup_tasks():
 # async def root():
 #     return FileResponse("static/index.html")
 
+@app.get("/")
+async def root():
+    return {"message": "Hello, User!"}
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,

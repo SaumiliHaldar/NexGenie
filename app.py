@@ -320,30 +320,93 @@ Prerequisites: {row['Prerequisites']}"""
 
 
 # --- Ask Course Route ---
+# @app.post("/ask_course")
+# async def ask_course(request: Request):
+#     data = await request.json()
+#     query = data.get("query", "")
+#     if not query:
+#         return {"error": "No query provided."}
+    
+#     # Get the results from the CSV search
+#     raw = answer_from_csv(query)
+
+#     # Check if raw is empty or invalid
+#     if not raw or len(raw) < 2:  # Ensure that raw has at least the summary and one course
+#         return {"error": "No courses found matching the query."}
+
+#     # The first element in raw is the summary
+#     summary = raw[0]
+#     seen = set()  # To track unique courses by name
+#     unique_courses = [summary]  # Start with the summary in the results
+
+#     # Iterate over the remaining courses in raw (skipping the summary)
+#     for course in raw[1:]:
+#         if course["name"] not in seen:
+#             seen.add(course["name"])  # Add course name to the seen set
+#             unique_courses.append(course)  # Add the course to the final list
+
+#     # Return the final list of unique courses, including the summary
+#     return {"answer": unique_courses}
+
 @app.post("/ask_course")
 async def ask_course(request: Request):
     data = await request.json()
-    query = data.get("query", "")
+    query = data.get("query", "").strip().lower()
+
     if not query:
         return {"error": "No query provided."}
-    
-    # Get the results from the CSV search
+
+    # Simple cleaning: remove unnecessary words
+    simple_words = ["what", "which", "tell", "me", "about", "find", "show", "give", "available",
+                    "are", "on", "our", "portal", "the", "is", "for", "do", "you", "have", "any",
+                    "a", "an", "i", "want", "to", "learn", "best"]
+    query_tokens = [word for word in query.split() if word not in simple_words]
+
+    # If after cleaning, query only contains 'course' or 'courses'
+    if len(query_tokens) == 0 or all(token in ["course", "courses"] for token in query_tokens):
+        # USER IS JUST ASKING GENERICALLY --> return all courses
+        df = pd.read_csv(csv_path)
+        results = []
+
+        for _, row in df.iterrows():
+            course_data = {
+                "name": str(row['Name']),
+                "description": str(row['Description']),
+                "price": str(row['Price']),
+                "level": str(row['Level']),
+                "benefits": str(row['Benefits']),
+                "prerequisites": str(row['Prerequisites'])
+            }
+            results.append(course_data)
+
+        return {
+            "summary": "Here are all the available courses on our portal.",
+            "courses": results
+        }
+
+    # Otherwise --> proceed with normal specific query
     raw = answer_from_csv(query)
 
-    # Check if raw is empty or invalid
-    if not raw or len(raw) < 2:  # Ensure that raw has at least the summary and one course
-        return {"error": "No courses found matching the query."}
+    # Safe checking
+    if isinstance(raw, dict):
+        return raw  # it's an error like {"summary": "No course found", "courses": []}
 
-    # The first element in raw is the summary
+    if not raw or len(raw) < 2:
+        return {"summary": "No courses found matching your query.", "courses": []}
+
+    # raw[0] is summary, raw[1:] are courses
     summary = raw[0]
-    seen = set()  # To track unique courses by name
-    unique_courses = [summary]  # Start with the summary in the results
+    courses = raw[1:]
 
-    # Iterate over the remaining courses in raw (skipping the summary)
-    for course in raw[1:]:
+    seen = set()
+    unique_courses = []
+
+    for course in courses:
         if course["name"] not in seen:
-            seen.add(course["name"])  # Add course name to the seen set
-            unique_courses.append(course)  # Add the course to the final list
+            seen.add(course["name"])
+            unique_courses.append(course)
 
-    # Return the final list of unique courses, including the summary
-    return {"answer": unique_courses}
+    return {
+        "summary": summary,
+        "courses": unique_courses
+    }

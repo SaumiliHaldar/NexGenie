@@ -8,8 +8,7 @@ import logging
 # from fastapi.staticfiles import StaticFiles
 # from fastapi.responses import FileResponse
 
-# --- Imports for CSV QA System ---
-import pandas as pd
+# --- Imports for DB QA System ---
 import faiss
 from sentence_transformers import SentenceTransformer
 from fastapi import Request
@@ -28,7 +27,6 @@ load_dotenv()
 # Initialize FastAPI app
 app = FastAPI()
 
-
 # --- Excecute .py files within same directory ---
 @app.on_event("startup")
 def startup_tasks():
@@ -38,15 +36,6 @@ def startup_tasks():
         logging.info("✅ Scripts executed successfully.\n")
     
     threading.Thread(target=run_scripts).start()
-
-
-# Serve static files (including HTML) from the "static" directory
-# app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Serve the index.html file from the static directory
-# @app.get("/")
-# async def root():
-#     return FileResponse("static/index.html")
 
 @app.get("/")
 async def root():
@@ -126,9 +115,7 @@ async def process_query(request_body: RequestBody):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# --- Load and Embed Courses CSV ---
-csv_path = "courses.csv"
-# embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# --- Embed Courses Data ---
 embedder = SentenceTransformer("paraphrase-MiniLM-L6-v2")
 
 # Store data and index
@@ -138,13 +125,13 @@ index = None
 
 def load_courses_data():
     global course_chunks, course_metadata, index
-    df = pd.read_csv(csv_path)
+    courses = get_courses_data()  # Fetch courses from MongoDB
 
-    # Convert each row into a "chunk" of info
+    # Convert each course to a "chunk" of information
     course_chunks = []
     course_metadata = []
 
-    for _, row in df.iterrows():
+    for row in courses:
         chunk = f"""Course: {row['Name']}
 Description: {row['Description']}
 Tags: {row['Tags']}
@@ -178,7 +165,7 @@ def extract_keywords(query: str) -> list:
     keywords = [token for token in tokens if token not in stop_words]
     return keywords
 
-## --- Helper: Answer based on MongoDB ---
+# --- Helper: Answer based on MongoDB ---
 def answer_from_db(query: str, k: int = 3) -> list:
     if index is None or not course_chunks:
         return {"summary": "Course data not loaded.", "courses": []}
@@ -308,11 +295,6 @@ Prerequisites: {row['Prerequisites']}"""
 
         try:
             course_list_text = "\n\n".join([f"{c['name']}: {c['benefits']}" for c in results])
-            # summary_prompt = (
-            #     f"Write a 1-2 line summary for someone interested in '{query}', "
-            #     f"based on the following course benefits:\n\n{course_list_text}.\n\n"
-            #     f"Make sure to clearly mention '{query}' in the summary."
-            # )
             summary_prompt = (
                 f"Write a 1-2 line summary for someone interested in '{' '.join(query_keywords)}', "
                 f"based on the following course benefits:\n\n{course_list_text}.\n\n"
@@ -327,34 +309,6 @@ Prerequisites: {row['Prerequisites']}"""
 
 
 # --- Ask Course Route ---
-# @app.post("/ask_course")
-# async def ask_course(request: Request):
-#     data = await request.json()
-#     query = data.get("query", "")
-#     if not query:
-#         return {"error": "No query provided."}
-    
-#     # Get the results from the CSV search
-#     raw = answer_from_db(query)
-
-#     # Check if raw is empty or invalid
-#     if not raw or len(raw) < 2:  # Ensure that raw has at least the summary and one course
-#         return {"error": "No courses found matching the query."}
-
-#     # The first element in raw is the summary
-#     summary = raw[0]
-#     seen = set()  # To track unique courses by name
-#     unique_courses = [summary]  # Start with the summary in the results
-
-#     # Iterate over the remaining courses in raw (skipping the summary)
-#     for course in raw[1:]:
-#         if course["name"] not in seen:
-#             seen.add(course["name"])  # Add course name to the seen set
-#             unique_courses.append(course)  # Add the course to the final list
-
-#     # Return the final list of unique courses, including the summary
-#     return {"answer": unique_courses}
-
 @app.post("/ask_course")
 async def ask_course(request: Request):
     # Step 1: Parse the query from the request
@@ -379,13 +333,31 @@ async def ask_course(request: Request):
 
             course_data = []
             for row in courses:
+                try:
+                    # Summarize the course details using Gemini API
+                    description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
+                    benefits_prompt = f"Summarize the following course benefits in 2 lines max:\n\n{row['Benefits']}"
+                    prerequisites_prompt = f"Summarize the prerequisites below briefly:\n\n{row['Prerequisites']}"
+
+                    # Generate summaries using Gemini API
+                    model = genai.GenerativeModel("gemini-1.5-flash")
+
+                    summarized_description = model.generate_content(description_prompt).text.strip()
+                    summarized_benefits = model.generate_content(benefits_prompt).text.strip()
+                    summarized_prerequisites = model.generate_content(prerequisites_prompt).text.strip()
+                except Exception as e:
+                    summarized_description = row['Description']
+                    summarized_benefits = row['Benefits']
+                    summarized_prerequisites = row['Prerequisites']
+
+                # Append the summarized or original course details
                 course_data.append({
                     "name": str(row['Name']),
-                    "description": row['Description'],  # Or you can use summarized version if you want
+                    "description": summarized_description,
                     "price": str(row['Price']),
                     "level": str(row['Level']),
-                    "benefits": row['Benefits'],  # Or summarized version
-                    "prerequisites": row['Prerequisites']  # Or summarized version
+                    "benefits": summarized_benefits,
+                    "prerequisites": summarized_prerequisites
                 })
 
             return {
@@ -408,7 +380,7 @@ async def ask_course(request: Request):
 
             # Process and return filtered courses
             seen = set()
-            unique_courses = []
+            unique_courses = [] 
 
             for course in courses:
                 if course["name"] not in seen:
@@ -419,3 +391,9 @@ async def ask_course(request: Request):
                 "summary": summary,
                 "courses": unique_courses  # Only include unique courses in the response
             }
+
+def get_memory_usage():
+    process = os.popen(f'tasklist /FI "PID eq {os.getpid()}"').read()
+    return process
+
+# print(f"Memory Usage: {get_memory_usage()}")

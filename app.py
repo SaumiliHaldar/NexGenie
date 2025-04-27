@@ -13,7 +13,7 @@ import pandas as pd
 import faiss
 from sentence_transformers import SentenceTransformer
 from fastapi import Request
-from courses_csv_maker import get_courses_list
+from course_db_data import get_courses_data
 import re
 
 # --- Imports for executing .py files within same directory ---
@@ -34,7 +34,7 @@ app = FastAPI()
 def startup_tasks():
     def run_scripts():
         # subprocess.run([sys.executable, "courses_db.py"])
-        subprocess.run([sys.executable, "courses_csv_maker.py"])
+        subprocess.run([sys.executable, "course_db_data.py"])
         logging.info("✅ Scripts executed successfully.\n")
     
     threading.Thread(target=run_scripts).start()
@@ -178,8 +178,8 @@ def extract_keywords(query: str) -> list:
     keywords = [token for token in tokens if token not in stop_words]
     return keywords
 
-# --- Helper: Answer based on CSV ---
-def answer_from_csv(query: str, k: int = 3) -> list:
+## --- Helper: Answer based on MongoDB ---
+def answer_from_db(query: str, k: int = 3) -> list:
     if index is None or not course_chunks:
         return {"summary": "Course data not loaded.", "courses": []}
     
@@ -187,13 +187,13 @@ def answer_from_csv(query: str, k: int = 3) -> list:
     query_keywords = extract_keywords(query)
     if len(query_keywords) == 1 and query_keywords[0] in ["courses", "course"]:
         # User is asking for all courses, so return all without filtering
-        df = pd.read_csv(csv_path)  # Reload CSV to access structured data
+        courses = get_courses_data()  # Fetch data from MongoDB
 
         results = []
         # Initialize Gemini model (done only once for reuse)
         model = genai.GenerativeModel("gemini-1.5-flash")
 
-        for _, row in df.iterrows():
+        for row in courses:
             try:
                 description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
                 benefits_prompt = f"Summarize the following course benefits in 2 lines max:\n\n{row['Benefits']}"
@@ -232,26 +232,26 @@ def answer_from_csv(query: str, k: int = 3) -> list:
 
     else:
         # If the query contains keywords, filter the courses based on the keywords
-        df = pd.read_csv(csv_path)  # Reload CSV to access structured data
+        courses = get_courses_data()  # Fetch data from MongoDB
 
         # Step 1: First extract keywords
         keywords = extract_keywords(query)
 
         # Step 2: Filter courses based on Tags
-        filtered_df = pd.DataFrame()
+        filtered_courses = []
         for keyword in keywords:
-            temp = df[df['Tags'].str.contains(keyword, case=False, na=False)]
-            filtered_df = pd.concat([filtered_df, temp])
+            temp = [course for course in courses if keyword.lower() in course['Tags'].lower()]
+            filtered_courses.extend(temp)
 
-        filtered_df = filtered_df.drop_duplicates()
+        filtered_courses = [dict(t) for t in {tuple(d.items()) for d in filtered_courses}]  # Remove duplicates
 
-        if filtered_df.empty:
+        if not filtered_courses:
             return {"summary": "No courses found matching your query.", "courses": []}
 
         # Step 3: Now embed filtered courses
         filtered_course_chunks = []
         filtered_metadata = []
-        for _, row in filtered_df.iterrows():
+        for row in filtered_courses:
             chunk = f"""Course: {row['Name']}
 Description: {row['Description']}
 Tags: {row['Tags']}
@@ -279,9 +279,9 @@ Prerequisites: {row['Prerequisites']}"""
         model = genai.GenerativeModel("gemini-1.5-flash")
 
         for idx in I[0]:
-            if idx >= len(filtered_df):
+            if idx >= len(filtered_courses):
                 continue
-            row = filtered_df.iloc[idx]
+            row = filtered_courses[idx]
 
             try:
                 description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
@@ -308,11 +308,17 @@ Prerequisites: {row['Prerequisites']}"""
 
         try:
             course_list_text = "\n\n".join([f"{c['name']}: {c['benefits']}" for c in results])
+            # summary_prompt = (
+            #     f"Write a 1-2 line summary for someone interested in '{query}', "
+            #     f"based on the following course benefits:\n\n{course_list_text}.\n\n"
+            #     f"Make sure to clearly mention '{query}' in the summary."
+            # )
             summary_prompt = (
-                f"Write a 1-2 line summary for someone interested in '{query}', "
+                f"Write a 1-2 line summary for someone interested in '{' '.join(query_keywords)}', "
                 f"based on the following course benefits:\n\n{course_list_text}.\n\n"
-                f"Make sure to clearly mention '{query}' in the summary."
+                f"Make sure to clearly mention '{' '.join(query_keywords)}' in the summary."
             )
+
             summary_text = model.generate_content(summary_prompt).text.strip()
         except Exception:
             summary_text = "Here are some top course recommendations based on your query."
@@ -329,7 +335,7 @@ Prerequisites: {row['Prerequisites']}"""
 #         return {"error": "No query provided."}
     
 #     # Get the results from the CSV search
-#     raw = answer_from_csv(query)
+#     raw = answer_from_db(query)
 
 #     # Check if raw is empty or invalid
 #     if not raw or len(raw) < 2:  # Ensure that raw has at least the summary and one course
@@ -351,63 +357,65 @@ Prerequisites: {row['Prerequisites']}"""
 
 @app.post("/ask_course")
 async def ask_course(request: Request):
+    # Step 1: Parse the query from the request
     data = await request.json()
-    query = data.get("query", "").strip().lower()
+    query = data.get("query", "").strip().lower()  # Normalize query input by stripping spaces and converting to lowercase
 
     if not query:
-        return {"error": "No query provided."}
+        return {"error": "No query provided."}  # If no query is provided, return an error response
 
-    # Simple cleaning: remove unnecessary words
-    simple_words = ["what", "which", "tell", "me", "about", "find", "show", "give", "available",
-                    "are", "on", "our", "portal", "the", "is", "for", "do", "you", "have", "any",
-                    "a", "an", "i", "want", "to", "learn", "best"]
-    query_tokens = [word for word in query.split() if word not in simple_words]
+    # Step 2: Clean the query to remove unnecessary words
+    simple_words = [
+        "what", "which", "tell", "me", "about", "find", "show", "give", "available",
+        "are", "on", "our", "portal", "the", "is", "for", "do", "you", "have", "any",
+        "a", "an", "i", "want", "to", "learn", "best"
+    ]
+    query_tokens = [word for word in query.split() if word not in simple_words]  # Remove simple words
 
-    # If after cleaning, query only contains 'course' or 'courses'
-    if len(query_tokens) == 0 or all(token in ["course", "courses"] for token in query_tokens):
-        # USER IS JUST ASKING GENERICALLY --> return all courses
-        df = pd.read_csv(csv_path)
-        results = []
+    # Step 3: Check if query is asking for a general "course" or "courses"
+    if "course" in query_tokens or "courses" in query_tokens:
+        if len(query_tokens) == 1:  # If the query contains only "course" or "courses"
+            courses = get_courses_data()  # Fetch all courses from MongoDB
 
-        for _, row in df.iterrows():
-            course_data = {
-                "name": str(row['Name']),
-                "description": str(row['Description']),
-                "price": str(row['Price']),
-                "level": str(row['Level']),
-                "benefits": str(row['Benefits']),
-                "prerequisites": str(row['Prerequisites'])
+            course_data = []
+            for row in courses:
+                course_data.append({
+                    "name": str(row['Name']),
+                    "description": row['Description'],  # Or you can use summarized version if you want
+                    "price": str(row['Price']),
+                    "level": str(row['Level']),
+                    "benefits": row['Benefits'],  # Or summarized version
+                    "prerequisites": row['Prerequisites']  # Or summarized version
+                })
+
+            return {
+                "summary": "Here are all the available courses on our portal.",
+                "courses": course_data
             }
-            results.append(course_data)
+        
+        else:
+            # If the query contains a keyword, filter the courses
+            raw = answer_from_db(query)  # Call the function to get courses based on the query
+            
+            if isinstance(raw, dict):  # Error checking, if no courses were found
+                return raw
 
-        return {
-            "summary": "Here are all the available courses on our portal.",
-            "courses": results
-        }
+            if not raw or len(raw) < 2:
+                return {"summary": "No courses found matching your query.", "courses": []}
 
-    # Otherwise --> proceed with normal specific query
-    raw = answer_from_csv(query)
+            summary = raw[0]  # First element is the summary
+            courses = raw[1:]  # Remaining elements are the filtered courses
 
-    # Safe checking
-    if isinstance(raw, dict):
-        return raw  # it's an error like {"summary": "No course found", "courses": []}
+            # Process and return filtered courses
+            seen = set()
+            unique_courses = []
 
-    if not raw or len(raw) < 2:
-        return {"summary": "No courses found matching your query.", "courses": []}
+            for course in courses:
+                if course["name"] not in seen:
+                    seen.add(course["name"])
+                    unique_courses.append(course)
 
-    # raw[0] is summary, raw[1:] are courses
-    summary = raw[0]
-    courses = raw[1:]
-
-    seen = set()
-    unique_courses = []
-
-    for course in courses:
-        if course["name"] not in seen:
-            seen.add(course["name"])
-            unique_courses.append(course)
-
-    return {
-        "summary": summary,
-        "courses": unique_courses
-    }
+            return {
+                "summary": summary,
+                "courses": unique_courses  # Only include unique courses in the response
+            }

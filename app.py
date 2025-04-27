@@ -30,12 +30,7 @@ app = FastAPI()
 # --- Excecute .py files within same directory ---
 @app.on_event("startup")
 def startup_tasks():
-    def run_scripts():
-        # subprocess.run([sys.executable, "courses_db.py"])
-        subprocess.run([sys.executable, "course_db_data.py"])
-        logging.info("✅ Scripts executed successfully.\n")
-    
-    threading.Thread(target=run_scripts).start()
+    logging.info("✅ Startup tasks initialized.")
 
 @app.get("/")
 async def root():

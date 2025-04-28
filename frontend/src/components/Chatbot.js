@@ -53,18 +53,19 @@ const Chatbot = () => {
     
             if (isCourseQuery) {
                 // If it's a course query, hit the ask_course endpoint
-                response = await axios.post('https://nexgenie.onrender.com/ask_course', {
+                response = await axios.post('https://saumilihaldar-nexgenie.hf.space/ask_course', {
                     query: input
                 });
     
                 // Extract courses and summary from the response
-                const [summary, ...courses] = response.data.answer;
+                const summary = response.data.summary;
+                const courses = response.data.courses;
     
                 // Format bot's course reply
                 const botMessages = [
                     { text: summary, sender: 'bot' },
                     ...courses.map((course) => ({
-                        text: `📘 *${course.name}*\n\n${course.description}\n\n💡 *Benefits:* ${course.benefits}\n📋 *Level:* ${course.level}\n🎯 *Price:* ₹${course.price}\n📎 *Prerequisites:* ${course.prerequisites}`,
+                        text: `📚 *${course.name}*\n\n📝 ${course.description}\n\n🚀 *Benefits:* ${course.benefits}\n🎓 *Level:* ${course.level}\n💰 *Price:* ₹${course.price}\n🧩 *Prerequisites:* ${course.prerequisites}`,
                         sender: 'bot'
                     }))
                 ];
@@ -76,7 +77,7 @@ const Chatbot = () => {
                 ]);
             } else {
                 // Normal code-related request (for code queries)
-                response = await axios.post('https://nexgenie.onrender.com/process_query', {
+                response = await axios.post('https://saumilihaldar-nexgenie.hf.space/process_query', {
                     queryResult: {
                         parameters: {
                             code: input,

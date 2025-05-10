@@ -88,7 +88,22 @@ const Chatbot: FC = () => {
           ...prev.filter((msg) => msg.text !== 'typing...'),
           ...botMessages,
         ]);
-      } else {
+      } 
+
+      else if (input.toLowerCase().includes('roadmap')) {
+        // New roadmap endpoint logic
+        response = await axios.post('https://saumilihaldar-nexgenie.hf.space/get_roadmap', { query: input });
+        const title = response.data.roadmap_title;
+        const roadmap = response.data.roadmap;
+
+        const botMessages: Message[] = [
+          { text: `<strong>${title}</strong>`, sender: "bot" },
+          { text: roadmap.replace(/\n/g, '<br/>'), sender: "bot" }, // preserve line breaks as HTML
+        ];
+        setMessages((prev) => [...prev, ...botMessages]);
+      } 
+      
+      else {
         // Normal code-related request (for code queries)
         response = await axios.post('https://saumilihaldar-nexgenie.hf.space/process_query', {
           queryResult: {

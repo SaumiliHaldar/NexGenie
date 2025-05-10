@@ -410,12 +410,6 @@ async def get_roadmap(request: Request):
 
     roadmap_prompt = (
         f"Create a complete, detailed, and structured step-by-step learning roadmap to become a {topic}. "
-        f"Organize it by stages like beginner, intermediate, and advanced. Include skills, tools, projects, certifications, and estimated timeframes where applicable. "
-        f"Format clearly using bullet points or numbered steps."
-    )
-
-    roadmap_prompt = (
-        f"Create a complete, detailed, and structured step-by-step learning roadmap to become a {topic}. "
         f"Begin with a one-sentence introduction like 'This roadmap outlines the steps to becoming a proficient {topic}. Timeframes are estimates and depend on prior experience and learning pace.' "
         f"Organize it into three main phases: Phase 1 - Foundational Knowledge, Phase 2 - Building Projects, and Phase 3 - Advanced Concepts & Specialization. "
         f"Each phase should include numbered steps, important skills, tools, projects, certifications, and estimated timeframes. "

@@ -25,6 +25,7 @@ def get_courses_data():
             "Level": d.get("level", ""),
             "Price": d.get("price", 0),
             "Estimated Price": d.get("estimatedprice", 0),
+            "Thumbnail": d.get("thumbnail", {}).get("url", "") if isinstance(d.get("thumbnail"), dict) else "",
             "Tags": ", ".join(d.get("tags", [])),
             "Benefits": " | ".join(b.get("title", "") for b in d.get("benefits", [])),
             "Prerequisites": " | ".join(p.get("title", "") for p in d.get("prerequisites", [])),

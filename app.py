@@ -15,6 +15,10 @@ from fastapi import Request
 from course_db_data import get_courses_data
 import re
 
+# --- Imports for Roadmap Generation ---
+import spacy
+from typing import List
+
 # --- Imports for executing .py files within same directory ---
 import threading
 import subprocess
@@ -265,26 +269,12 @@ Prerequisites: {row['Prerequisites']}"""
                 continue
             row = filtered_courses[idx]
 
-            try:
-                description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
-                benefits_prompt = f"Summarize the following course benefits in 2 lines max:\n\n{row['Benefits']}"
-                prerequisites_prompt = f"Summarize the prerequisites below briefly:\n\n{row['Prerequisites']}"
-
-                summarized_description = model.generate_content(description_prompt).text.strip()
-                summarized_benefits = model.generate_content(benefits_prompt).text.strip()
-                summarized_prerequisites = model.generate_content(prerequisites_prompt).text.strip()
-            except Exception as e:
-                summarized_description = row['Description']
-                summarized_benefits = row['Benefits']
-                summarized_prerequisites = row['Prerequisites']
-
             course_data = {
                 "name": str(row['Name']),
-                "description": summarized_description,
-                "price": str(row['Price']),
-                "level": str(row['Level']),
-                "benefits": summarized_benefits,
-                "prerequisites": summarized_prerequisites
+                    "price": str(row['Price']),
+                    "level": str(row['Level']),
+                    "thumbnail": str(row.get("Thumbnail", "")),
+
             }
             results.append(course_data)
 
@@ -328,31 +318,12 @@ async def ask_course(request: Request):
 
             course_data = []
             for row in courses:
-                try:
-                    # Summarize the course details using Gemini API
-                    description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
-                    benefits_prompt = f"Summarize the following course benefits in 2 lines max:\n\n{row['Benefits']}"
-                    prerequisites_prompt = f"Summarize the prerequisites below briefly:\n\n{row['Prerequisites']}"
-
-                    # Generate summaries using Gemini API
-                    model = genai.GenerativeModel("gemini-1.5-flash")
-
-                    summarized_description = model.generate_content(description_prompt).text.strip()
-                    summarized_benefits = model.generate_content(benefits_prompt).text.strip()
-                    summarized_prerequisites = model.generate_content(prerequisites_prompt).text.strip()
-                except Exception as e:
-                    summarized_description = row['Description']
-                    summarized_benefits = row['Benefits']
-                    summarized_prerequisites = row['Prerequisites']
-
                 # Append the summarized or original course details
                 course_data.append({
                     "name": str(row['Name']),
-                    "description": summarized_description,
                     "price": str(row['Price']),
                     "level": str(row['Level']),
-                    "benefits": summarized_benefits,
-                    "prerequisites": summarized_prerequisites
+                    "thumbnail": str(row.get("Thumbnail", "")),
                 })
 
             return {
@@ -392,3 +363,77 @@ def get_memory_usage():
     return process
 
 # print(f"Memory Usage: {get_memory_usage()}")
+
+
+# Load spaCy English model
+nlp = spacy.load("en_core_web_sm")
+
+# Extract occupation from query
+def extract_occupation(query: str) -> str:
+    doc = nlp(query)
+    target_phrases = []
+
+    # Check noun chunks for likely occupations
+    for chunk in doc.noun_chunks:
+        chunk_text = chunk.text.strip().lower()
+        if "roadmap" in chunk_text:
+            continue
+        if any(keyword in chunk_text for keyword in ["developer", "engineer", "scientist", "designer", "manager", "specialist", "analyst", "architect"]):
+            target_phrases.append(chunk.text.strip())
+
+    if target_phrases:
+        occupation = target_phrases[0]
+    else:
+        # Fallback to longest noun chunk excluding 'roadmap'
+        noun_chunks = [chunk.text.strip() for chunk in doc.noun_chunks if "roadmap" not in chunk.text.lower()]
+        occupation = noun_chunks[0] if noun_chunks else "professional"
+
+    # Remove leading articles like "a", "an", "the"
+    occupation = re.sub(r"^(a|an|the)\s+", "", occupation, flags=re.IGNORECASE)
+    return occupation
+
+
+# --- Get Roadmap Route ---
+@app.post("/get_roadmap")
+async def get_roadmap(request: Request):
+    data = await request.json()
+    query = data.get("query", "").strip().lower()
+
+    if not query:
+        return {"error": "No query provided."}
+
+    # Extract key occupation keyword
+    important_keywords = extract_occupation(query)
+    print("Extracted:", important_keywords)
+
+    topic = important_keywords if important_keywords else "this career"
+
+    roadmap_prompt = (
+        f"Create a complete, detailed, and structured step-by-step learning roadmap to become a {topic}. "
+        f"Organize it by stages like beginner, intermediate, and advanced. Include skills, tools, projects, certifications, and estimated timeframes where applicable. "
+        f"Format clearly using bullet points or numbered steps."
+    )
+
+    roadmap_prompt = (
+        f"Create a complete, detailed, and structured step-by-step learning roadmap to become a {topic}. "
+        f"Begin with a one-sentence introduction like 'This roadmap outlines the steps to becoming a proficient {topic}. Timeframes are estimates and depend on prior experience and learning pace.' "
+        f"Organize it into three main phases: Phase 1 - Foundational Knowledge, Phase 2 - Building Projects, and Phase 3 - Advanced Concepts & Specialization. "
+        f"Each phase should include numbered steps, important skills, tools, projects, certifications, and estimated timeframes. "
+        f"Use clear formatting with section headers like 'Phase 1: Foundational Knowledge (2-4 months)' and numbered steps underneath. "
+        f"Use bullet points inside steps where helpful. End with a 'Tools & Resources' section listing recommended platforms (starting with the LearnNexus portal), documentation, and editors. "
+        f"Do not use any Markdown formatting or symbols. Only return the roadmap content."
+    )
+
+
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(roadmap_prompt)
+        roadmap_text = response.text.strip()
+
+        return {
+            "roadmap_title": f"Roadmap to Become a {topic.title()}",
+            "roadmap": roadmap_text
+        }
+
+    except Exception as e:
+        return {"error": f"Failed to generate roadmap. {str(e)}"}

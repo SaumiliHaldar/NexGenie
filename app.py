@@ -205,7 +205,7 @@ def answer_from_db(query: str, k: int = 3) -> list:
 
         # --- Add a brief summary of the matched courses using Gemini ---
         try:
-            course_list_text = "\n\n".join([f"{c['name']}: {c['benefits']}" for c in results])
+            course_list_text = "\n\n".join([f"{c['name']}" for c in results])
             summary_prompt = (
                 f"Write a 1-2 line summary for someone interested in 'courses', "
                 f"based on the following course benefits:\n\n{course_list_text}.\n\n"
@@ -279,7 +279,7 @@ Prerequisites: {row['Prerequisites']}"""
             results.append(course_data)
 
         try:
-            course_list_text = "\n\n".join([f"{c['name']}: {c['benefits']}" for c in results])
+            course_list_text = "\n\n".join([f"{c['name']}" for c in results])
             summary_prompt = (
                 f"Write a 1-2 line summary for someone interested in '{' '.join(query_keywords)}', "
                 f"based on the following course benefits:\n\n{course_list_text}.\n\n"

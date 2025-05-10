@@ -73,12 +73,10 @@ const Chatbot: FC = () => {
           { text: summary, sender: "bot" },
           ...courses.map((course: any) => ({
             text: `
-              <strong>• Course Name:</strong> ${course.name}<br/>
-              <strong>• Description:</strong> ${course.description}<br/>
-              <strong>• Benefits:</strong> ${course.benefits}<br/>
+              ${course.thumbnail ? `<img src="${course.thumbnail}" alt="${course.name}" style="max-width: 100%; height: auto; margin-top: 0.5rem;" />` : ''}<br/>
+              <strong>${course.name}<br/>
               <strong>• Level:</strong> ${course.level}<br/>
               <strong>• Price:</strong> ₹${course.price}<br/>
-              <strong>• Prerequisites:</strong> ${course.prerequisites}
             `,
             sender: "bot",
           })),
@@ -137,7 +135,6 @@ const Chatbot: FC = () => {
 
   return (
     <div className="chatbot">
-      {/* <div className="chat-button" ref={chatButtonRef} onClick={toggleChat}> */}
       <div
           className="chat-button"
           ref={chatButtonRef}

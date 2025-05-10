@@ -107,10 +107,8 @@ const Chatbot: FC = () => {
 
         // Format phase titles
         roadmap = roadmap
-          .replace(/(Phase 1 - .*?\(Estimated:.*?\))/, "<strong>$1</strong>")
-          .replace(/(Phase 2 - .*?\(Estimated:.*?\))/, "<strong>$1</strong>")
-          .replace(/(Phase 3 - .*?\(Estimated:.*?\))/, "<strong>$1</strong>")
-          .replace(/(Tools & Resources:)/, "<strong>$1</strong>")
+          .replace(/(Phase \d+.*?)\n/g, "<strong>$1</strong><br/>")
+          .replace(/(Tools & Resources:)/g, "<strong>$1</strong>")
           .replace(/\n/g, "<br/>");
 
         const botMessages: Message[] = [

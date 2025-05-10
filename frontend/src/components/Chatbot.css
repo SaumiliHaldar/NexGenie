@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
 
+
 * {
   margin: 0;
   padding: 0;
@@ -7,11 +8,10 @@
 }
 
 body {
-  background-color: #101826; /* Set the background color of the entire website */
   font-family: 'Nunito', sans-serif;
-  color: #fff; /* Ensure text is white for readability on dark background */
 }
 
+/* Chatbot Container */
 .chatbot {
   position: fixed;
   bottom: 20px;
@@ -20,6 +20,7 @@ body {
   font-family: 'Nunito', sans-serif;
 }
 
+/* Floating Animation */
 @keyframes moveUpDown {
   0%, 100% {
     transform: translateY(0);
@@ -29,6 +30,7 @@ body {
   }
 }
 
+/* Chat Button Styles */
 .chat-button {
   width: 60px;
   height: 60px;
@@ -51,27 +53,33 @@ body {
   transform: scale(1.1);
 }
 
+/* Chat Window Base Styles (Light Theme Default) */
 .chat-window {
   position: fixed;
-  bottom: 90px;
-  right: 20px;
+  bottom: 30px;
+  right: 30px;
   width: 320px;
   height: 500px;
-  background-color: #fff; /* White background for the chatbot interface */
   border-radius: 10px;
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8 16px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #E0E0E0;
+  z-index: 1001;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform: scale(1);
+  opacity: 1;
+  background-color: #ffffff;
+  color: #000000;
 }
 
+/* Chat Header */
 .chat-header {
   display: flex;
   align-items: center;
   padding: 12px;
-  background-color: #006666; /* Deeper teal header for chatbot */
-  color: #fff;
+  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  color: #ffffff;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;
 }
@@ -98,16 +106,16 @@ body {
   cursor: pointer;
 }
 
+/* Message Area */
 .messages {
   flex-grow: 1;
   padding: 12px;
   overflow-y: auto;
-  background-color: #F9F9F9;
+  background-color: #f9f9f9;
 }
 
 .message {
   display: flex;
-  /* align-items: center; */
   align-items: flex-start;
   margin-bottom: 10px;
 }
@@ -125,9 +133,9 @@ body {
   height: 30px;
   border-radius: 50%;
   margin: 0 8px;
-  align-items: self-start;
 }
 
+/* Chat Bubble Styles */
 .chat-bubble {
   max-width: 70%;
   padding: 10px 15px;
@@ -139,37 +147,40 @@ body {
 }
 
 .chat-bubble.user {
-  background-color: #cfe2f3;
-  color: #333;
+  background-color: #d1d5db; /* Tailwind's bg-gray-300 */
+  color: #1f2937;            /* Tailwind's text-gray-800 */
   border-top-right-radius: 0;
 }
 
 .chat-bubble.bot {
-  background-color: #d4edda;
-  color: #333;
+  background-color: #e5e7eb; /* Tailwind's bg-gray-200 */
+  color: #111827;            /* Slightly darker text */
   border-top-left-radius: 0;
 }
 
+/* Input Area */
 .input-area {
   display: flex;
   align-items: center;
   padding: 10px;
-  border-top: 1px solid #E0E0E0;
-  background-color: #fff;
+  border-top: 1px solid #e0e0e0;
+  background-color: #f1f1f1;
 }
 
 .input-area input {
   flex-grow: 1;
   padding: 10px;
   font-size: 14px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid #ccc;
   border-radius: 20px;
   outline: none;
+  background-color: #ffffff;
+  color: #000000;
 }
 
 .input-area button {
-  background-color: #338C8C;
-  color: #fff;
+  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  color: #ffffff;
   border: none;
   border-radius: 20px;
   padding: 10px 15px;
@@ -179,24 +190,121 @@ body {
 }
 
 .input-area button:hover {
-  background-color: #004D4D;
+  background: linear-gradient(to right, #2563eb, #7c3aed);
 }
 
-
-/* Scrollbar styling */
+/* Scrollbar Styling */
 .messages::-webkit-scrollbar {
   width: 8px;
 }
 
 .messages::-webkit-scrollbar-track {
-  background: #F1F1F1;
+  background: #f1f1f1;
 }
 
 .messages::-webkit-scrollbar-thumb {
-  background: #C1C1C1;
+  background: #c1c1c1;
   border-radius: 4px;
 }
 
 .messages::-webkit-scrollbar-thumb:hover {
-  background: #888;
+  background: #888888;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .chat-window {
+    width: 90%;
+    height: 500px;
+  }
+
+  .input-area input,
+  .input-area button {
+    font-size: 12px;
+  }
+
+  .input-area button {
+    padding: 8px 12px;
+  }
+
+  .chat-button {
+    width: 50px;
+    height: 50px;
+  }
+
+  .chat-button img {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-window {
+    width: 85%;
+  }
+
+  .chat-button {
+    width: 45px;
+    height: 45px;
+  }
+
+  .chat-button img {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+/* ===================== */
+/*  DARK-THEME OVERRIDES */
+/* ===================== */
+.dark .chat-window {
+  background-color: #101826;
+  color: #ffffff;
+}
+
+.dark .messages {
+  background-color: #1a1a2e;
+}
+
+.dark .chat-bubble.user {
+  background-color: #4b5563; /* Tailwind's bg-gray-600 */
+  color: #f3f4f6;            /* Tailwind's text-gray-200 */
+}
+
+.dark .chat-bubble.bot {
+  background-color: #2b2b3c;
+  color: #f0f0f0;
+}
+
+.dark .input-area {
+  background-color: #1e1e2f;
+}
+
+.dark .input-area input {
+  background-color: #2c2c3d;
+  color: #ffffff;
+  border: 1px solid #444444;
+}
+
+.dark .input-area button {
+  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  color: #ffffff;
+}
+
+/* Scrollbar Styling for Dark Theme */
+.dark .messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark .messages::-webkit-scrollbar-track {
+  background: #1a1a2e; /* Matches the dark message background */
+}
+
+.dark .messages::-webkit-scrollbar-thumb {
+  background: #444c5e; /* Subtle dark thumb */
+  border-radius: 4px;
+}
+
+.dark .messages::-webkit-scrollbar-thumb:hover {
+  background: #5c6370; /* Slightly brighter on hover */
 }

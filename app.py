@@ -409,13 +409,16 @@ async def get_roadmap(request: Request):
     topic = important_keywords if important_keywords else "this career"
 
     roadmap_prompt = (
-        f"Create a structured, plain-text step-by-step learning roadmap to become a {topic}. "
-        f"Start with a one-sentence intro like 'This roadmap outlines the steps to becoming a proficient {topic}. Timeframes are estimates and depend on prior experience and learning pace.' "
-        f"Organize it into three main phases: Phase 1 - Foundational Knowledge, Phase 2 - Building Projects, Phase 3 - Advanced Concepts & Specialization. "
-        f"For each phase, use a heading on its own line, followed by numbered steps. Inside each step, use bullet points marked with • (do not use *, -, or Markdown). "
-        f"Do not add more than one newline between any lines or sections — exactly one line break after headers and bullet points. "
-        f"End with a 'Tools & Resources' section listing recommended platforms starting with LearnNexus. Return plain text only."
+        f"Create a complete, detailed, and structured step-by-step learning roadmap to become a {topic}. "
+        f"Begin with a one-sentence introduction like 'This roadmap outlines the steps to becoming a proficient {topic}. Timeframes are estimates and depend on prior experience and learning pace.' "
+        f"Organize it into three main phases: Phase 1 - Foundational Knowledge, Phase 2 - Building Projects, and Phase 3 - Advanced Concepts & Specialization. "
+        f"Each phase should include numbered steps, important skills, tools, projects, certifications, and estimated timeframes. "
+        f"Use clear formatting with section headers like 'Phase 1: Foundational Knowledge (2-4 months)' and numbered steps underneath. "
+        f"Use bullet points '•' (instead of * or -) for points"
+        f"Use bullet points inside steps where helpful. End with a 'Tools & Resources:' section listing recommended platforms (starting with the LearnNexus portal), documentation, and editors. in points using bullets '•'. "
+        f"Do not use any Markdown formatting or symbols. Only return the roadmap content."
     )
+
 
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")

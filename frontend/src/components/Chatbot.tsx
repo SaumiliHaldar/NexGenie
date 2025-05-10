@@ -94,8 +94,8 @@ const Chatbot: FC = () => {
           ...prev.filter((msg) => msg.text !== "typing..."),
           ...botMessages,
         ]);
-      } 
-      
+      }
+
       // If it's not a course query, check if it's a roadmap query
       else if (input.toLowerCase().includes("roadmap")) {
         response = await axios.post(
@@ -106,28 +106,20 @@ const Chatbot: FC = () => {
         let roadmap = response.data.roadmap;
 
         // Format phase titles
-        roadmap = roadmap.replace(
-          /(Phase \d+:.*?)(\n)/g,
-          "<strong>$1</strong><br/><br/>"
-        );
-
-        // Format section labels (Important Skills, Tools, Projects, Certifications)
-        roadmap = roadmap.replace(
-          /(Important Skills:|Tools:|Certifications:)/g,
-          "<strong>$1</strong>"
-        );
-        roadmap = roadmap.replace(
-          /(Tools & Resources)/g,
-          "<strong>$1</strong>"
-        );
+        roadmap = roadmap
+          .replace(/(Phase 1 - .*?\(Estimated:.*?\))/, "<strong>$1</strong>")
+          .replace(/(Phase 2 - .*?\(Estimated:.*?\))/, "<strong>$1</strong>")
+          .replace(/(Phase 3 - .*?\(Estimated:.*?\))/, "<strong>$1</strong>")
+          .replace(/(Tools & Resources:)/, "<strong>$1</strong>")
+          .replace(/\n/g, "<br/>");
 
         const botMessages: Message[] = [
           { text: `<strong>${title}</strong>`, sender: "bot" },
           { text: roadmap, sender: "bot" },
         ];
         setMessages((prev) => [...prev, ...botMessages]);
-      } 
-      
+      }
+
       // If it's not a course or roadmap query, check if it's a code query
       else {
         // Normal code-related request (for code queries)

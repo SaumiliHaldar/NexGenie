@@ -56,8 +56,42 @@ const Chatbot: FC = () => {
 
       let response;
 
-      if (isCourseQuery) {
-        // If it's a course query, hit the ask_course endpoint
+      // Greet: check for basic greetings
+      const greetingKeywords = [
+        "hi",
+        "hii",
+        "hlo",
+        "hello",
+        "hey",
+        "yo",
+        "good morning",
+        "good afternoon",
+        "good evening",
+      ];
+      const isGreeting = greetingKeywords.some((greet) =>
+        input.toLowerCase().includes(greet)
+      );
+
+      if (isGreeting) {
+        response = await axios.post(
+          "https://saumilihaldar-nexgenie.hf.space/greet",
+          {
+            query: input,
+          }
+        );
+
+        const botMessages: Message[] = response.data.fulfillmentMessages.map(
+          (msg: any) => ({
+            text: msg.text.text[0],
+            sender: "bot",
+          })
+        );
+
+        setMessages((prev) => [...prev, ...botMessages]);
+      } 
+      
+      // If it's a course query, hit the ask_course endpoint
+      else if (isCourseQuery) {
         console.log(isCourseQuery);
         response = await axios.post(
           "https://saumilihaldar-nexgenie.hf.space/ask_course",

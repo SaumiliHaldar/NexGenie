@@ -72,6 +72,7 @@ const Chatbot: FC = () => {
         input.toLowerCase().includes(greet)
       );
 
+      // If it's a greeting, hit the greet endpoint
       if (isGreeting) {
         response = await axios.post(
           "https://saumilihaldar-nexgenie.hf.space/greet",
@@ -88,8 +89,8 @@ const Chatbot: FC = () => {
         );
 
         setMessages((prev) => [...prev, ...botMessages]);
-      } 
-      
+      }
+
       // If it's a course query, hit the ask_course endpoint
       else if (isCourseQuery) {
         console.log(isCourseQuery);
@@ -153,8 +154,18 @@ const Chatbot: FC = () => {
       }
 
       // If it's not a course or roadmap query, check if it's a code query
-      else {
-        // Normal code-related request (for code queries)
+      else if (
+        [
+          "code",
+          "program",
+          "logic",
+          "algorithm",
+          "debug",
+          "syntax",
+          "function",
+          "programming",
+        ].some((keyword) => input.toLowerCase().includes(keyword))
+      ) {
         response = await axios.post(
           "https://saumilihaldar-nexgenie.hf.space/process_query",
           {
@@ -166,18 +177,31 @@ const Chatbot: FC = () => {
             },
           }
         );
-
         const botMessages: Message[] = response.data.fulfillmentMessages.map(
           (msg: any) => ({
             text: msg.text.text[0],
             sender: "bot",
           })
         );
+        setMessages((prev) => [...prev, ...botMessages]);
+      }
 
-        setMessages((prev) => [
-          ...prev.filter((msg) => msg.text !== "typing..."),
-          ...botMessages,
-        ]);
+      // If it's not a course, roadmap, or code query, hit the ask_general endpoint
+      else {
+        response = await axios.post(
+          "https://saumilihaldar-nexgenie.hf.space/ask_general",
+          { query: input }
+        );
+
+        if (response.data && response.data.answer) {
+          const botMessages: Message[] = [
+            { text: response.data.answer, sender: "bot" },
+          ];
+          setMessages((prev) => [
+            ...prev.filter((msg) => msg.text !== "typing..."),
+            ...botMessages,
+          ]);
+        }
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -196,7 +220,6 @@ const Chatbot: FC = () => {
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
-    // If opening chat, focus input without resetting messages
     if (!isOpen) {
       setTimeout(() => document.getElementById("chat-input")?.focus(), 300);
     }
@@ -245,7 +268,6 @@ const Chatbot: FC = () => {
                     alt="Bot Avatar"
                   />
                 )}
-                {/* <div className={`bg-gray-200 chat-bubble ${msg.sender}`}>{msg.text}</div> */}
 
                 <div
                   className={`bg-gray-200 chat-bubble ${msg.sender}`}
@@ -261,8 +283,6 @@ const Chatbot: FC = () => {
                 )}
               </div>
             ))}
-
-            {/* Add typing indicator for bot */}
             {loading && (
               <div className="message bot">
                 <img
@@ -273,7 +293,6 @@ const Chatbot: FC = () => {
                 <div className="chat-bubble bot">typing...</div>
               </div>
             )}
-
             <div ref={messagesEndRef} />
           </div>
           <div className="input-area">

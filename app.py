@@ -79,6 +79,43 @@ class RequestBody(BaseModel):
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
+# --- Handle User Greetings ---
+@app.post("/greet")
+async def greet(request: Request):
+    try:
+        data = await request.json()
+        user_input = data.get("query", "").strip().lower()
+
+        if not user_input:
+            return {"error": "No input provided."}
+
+        # Gemini prompt to detect and respond to any kind of greeting
+        prompt = (
+            f"The user said: '{user_input}'.\n"
+            "If it's a greeting or friendly message (like hi, hello, hey, good morning, etc), reply with a warm, casual 1–2 sentence greeting. (e.g., 'Hi User! How can I help you today?') "
+            "Sound human, not robotic. Vary responses. "
+            "You’re NexGenie — an AI that helps with coding, tech questions, roadmaps, and course advice. "
+            "Casually mention 1–2 of those in your reply. Don’t explain what the user said."
+        )
+
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+
+        reply = response.text.strip()
+
+        return {
+            "fulfillmentMessages": [
+                {
+                    "text": {
+                        "text": [reply]
+                    }
+                }
+            ]
+        }
+
+    except Exception as e:
+        return {"error": f"Failed to process greeting. {str(e)}"}
+
 
 # --- Process General Query and Coding Questions ---
 @app.post("/process_query")
@@ -432,3 +469,42 @@ async def get_roadmap(request: Request):
 
     except Exception as e:
         return {"error": f"Failed to generate roadmap. {str(e)}"}
+
+
+# --- Generate answers to general questions ---
+@app.post("/ask_general")
+async def ask_general_question(request: Request):
+    data = await request.json()
+    user_query = data.get("query", "").strip().lower()
+
+    if not user_query:
+        raise HTTPException(status_code=400, detail="No query provided.")
+
+    prompt = (
+        f"Answer the following general knowledge question in a clear and structured format:\n\n"
+        f"'{user_query}'\n\n"
+        f"Always follow this consistent format:\n"
+        f"1. Definition or Explanation (if applicable)\n"
+        f"2. Key Points or Comparison\n"
+        f"3. Examples or Use-Cases (if relevant)\n"
+        f"4. Final Summary (1–2 lines)\n\n"
+        f"Formatting Rules:\n"
+        f"• Use plain, simple language — avoid technical jargon unless necessary\n"
+        f"• Use bullet points marked with '•' for lists and comparisons\n"
+        f"• Avoid markdown symbols like *, #, or underscores\n"
+        f"• Avoid repeating the question\n"
+        f"• Keep the tone neutral and informative"
+    )
+
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        answer = response.text.strip()
+
+        return {
+            "question": user_query,
+            "answer": answer
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate answer. {str(e)}")

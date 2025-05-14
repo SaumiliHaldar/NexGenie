@@ -481,19 +481,25 @@ async def ask_general_question(request: Request):
         raise HTTPException(status_code=400, detail="No query provided.")
 
     prompt = (
-        f"Answer the following general knowledge question in a clear and structured format:\n\n"
+        f"Provide a clear, structured answer to the following question:\n\n"
         f"'{user_query}'\n\n"
-        f"Always follow this consistent format:\n"
-        f"1. Definition or Explanation (if applicable)\n"
-        f"2. Key Points or Comparison\n"
-        f"3. Examples or Use-Cases (if relevant)\n"
-        f"4. Final Summary (1–2 lines)\n\n"
+        f"Use this consistent structure regardless of question type:\n"
+        f"1. Core Explanation or Definition\n"
+        f"   • Provide a simple and clear explanation or definition\n"
+        f"   • If the question is about differences, start with a brief context\n"
+        f"2. Key Details or Breakdown\n"
+        f"   • List essential points, steps, or comparisons as bullet points\n"
+        f"   • Use '•' as bullet symbol, not *, -, or markdown\n"
+        f"3. Examples or Applications\n"
+        f"   • Give real-world use-cases, analogies, or brief examples (if applicable) \n"
+        f"4. Quick Summary\n"
+        f"   • Wrap up in 1–2 sentences with a neutral conclusion\n"
         f"Formatting Rules:\n"
-        f"• Use plain, simple language — avoid technical jargon unless necessary\n"
-        f"• Use bullet points marked with '•' for lists and comparisons\n"
-        f"• Avoid markdown symbols like *, #, or underscores\n"
-        f"• Avoid repeating the question\n"
-        f"• Keep the tone neutral and informative"
+        f"• Use plain and simple language — avoid jargon unless necessary\n"
+        f"• Do NOT include the original question in the answer\n"
+        f"• Do NOT use markdown symbols (*, _, #, etc.)\n"
+        f"• Avoid unnecessary repetition\n"
+        f"• Maintain a neutral, informative tone"
     )
 
     try:

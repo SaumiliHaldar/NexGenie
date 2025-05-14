@@ -69,7 +69,10 @@ const Chatbot: FC = () => {
         "good evening",
       ];
       const isGreeting = greetingKeywords.some((greet) =>
-        input.toLowerCase().includes(greet)
+        input
+          .toLowerCase()
+          .trim()
+          .match(new RegExp(`^${greet}\\b`, "i"))
       );
 
       // If it's a greeting, hit the greet endpoint
@@ -131,7 +134,7 @@ const Chatbot: FC = () => {
         ]);
       }
 
-      // If it's not a course query, check if it's a roadmap query
+      // If it's a roadmap query, hit the get_roadmap endpoint
       else if (input.toLowerCase().includes("roadmap")) {
         response = await axios.post(
           "https://saumilihaldar-nexgenie.hf.space/get_roadmap",
@@ -153,12 +156,13 @@ const Chatbot: FC = () => {
         setMessages((prev) => [...prev, ...botMessages]);
       }
 
-      // If it's not a course or roadmap query, check if it's a code query
+      // If it's a code query, hit the process_query endpoint
       else if (
         [
           "code",
           "program",
           "logic",
+          "wap",
           "algorithm",
           "debug",
           "syntax",
@@ -194,8 +198,16 @@ const Chatbot: FC = () => {
         );
 
         if (response.data && response.data.answer) {
+          // Optionally format the response into HTML
+          const formattedAnswer = response.data.answer
+            .replace(/\n/g, "<br/>") // convert newlines to <br/>
+            .replace(
+              /(\d+\.\s*[A-Z][^\n<]*)/g, // Match lines like "1. Core Explanation..."
+              "<strong>$1</strong>"
+            );
+
           const botMessages: Message[] = [
-            { text: response.data.answer, sender: "bot" },
+            { text: formattedAnswer, sender: "bot" },
           ];
           setMessages((prev) => [
             ...prev.filter((msg) => msg.text !== "typing..."),

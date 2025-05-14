@@ -3,6 +3,9 @@ import axios from "axios";
 import "./Chatbot.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import Prism from "prismjs";
+import "prismjs/themes/prism.css"; // You can choose a different theme here
+// import "prismjs/components/prism-python.min.js"; // Import the specific language if needed
 
 interface Message {
   text: string;
@@ -182,11 +185,37 @@ const Chatbot: FC = () => {
           }
         );
         const botMessages: Message[] = response.data.fulfillmentMessages.map(
-          (msg: any) => ({
-            text: msg.text.text[0],
-            sender: "bot",
-          })
+          (msg: any) => {
+            const codeText = msg.text.text[0];
+
+            // Check if the response contains code block with a language (e.g., ```python)
+            if (codeText && codeText.startsWith("```")) {
+              // Extract the language from the opening backticks (e.g., "python", "javascript", etc.)
+              const languageMatch = codeText.match(/^```(\w+)\n/);
+              const language = languageMatch ? languageMatch[1] : "plaintext"; // Default to "plaintext" if no language found
+
+              // Apply Prism syntax highlighting to the code block
+              const highlightedCode = Prism.highlight(
+                codeText.replace(/^```(\w+)\n/, "").replace(/```$/, ""), // Remove language and closing backticks
+                Prism.languages[language] || Prism.languages.plaintext, // Use the language extracted from the code block
+                language
+              );
+
+              return {
+                text: `<div class="code-block-wrapper"><pre><code class="language-${language}">${highlightedCode}</code></pre></div>`,
+                sender: "bot",
+              };
+            }
+
+
+            // If no code block found, return the message as is
+            return {
+              text: msg.text.text[0],
+              sender: "bot",
+            };
+          }
         );
+
         setMessages((prev) => [...prev, ...botMessages]);
       }
 

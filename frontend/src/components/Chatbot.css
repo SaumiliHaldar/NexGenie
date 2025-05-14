@@ -146,6 +146,39 @@ body {
   text-align: left;
 }
 
+/* Code Block Wrapper */
+.code-block-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.code-block-wrapper pre {
+  margin: 0;
+  white-space: pre;
+}
+
+/* Code Block Scrollbar */
+.code-block-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.code-block-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.code-block-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.code-block-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #888888;
+}
+
+/* Chat Bubble Colors */
 .chat-bubble.user {
   background-color: #d1d5db; /* Tailwind's bg-gray-300 */
   color: #1f2937;            /* Tailwind's text-gray-800 */
@@ -291,6 +324,12 @@ body {
   color: #ffffff;
 }
 
+/* Dark Theme Code Block Text Color */
+.dark .code-block-wrapper pre code {
+  color: #f0f0f0; /* White color for code text in dark mode */
+}
+
+
 /* Scrollbar Styling for Dark Theme */
 .dark .messages::-webkit-scrollbar {
   width: 8px;
@@ -307,4 +346,23 @@ body {
 
 .dark .messages::-webkit-scrollbar-thumb:hover {
   background: #5c6370; /* Slightly brighter on hover */
+}
+
+
+/* Code Block Scrollbar (Dark Theme) */
+.dark .code-block-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.dark .code-block-wrapper::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+.dark .code-block-wrapper::-webkit-scrollbar-thumb {
+  background: #444c5e;
+  border-radius: 4px;
+}
+
+.dark .code-block-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #5c6370;
 }

@@ -3,9 +3,15 @@ import axios from "axios";
 import "./Chatbot.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import DOMPurify from "dompurify";
 import Prism from "prismjs";
-import "prismjs/themes/prism.css"; // You can choose a different theme here
+import "prismjs/themes/prism-tomorrow.min.css"; // Importing the theme
+import "prismjs/plugins/autoloader/prism-autoloader"; // Import the autoloader to all languages
 // import "prismjs/components/prism-python.min.js"; // Import the specific language if needed
+
+// Configure autoloader language path here
+Prism.plugins.autoloader.languages_path =
+  "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/";
 
 interface Message {
   text: string;
@@ -41,6 +47,28 @@ const Chatbot: FC = () => {
     }
   }, [isOpen]); // Trigger effect when isOpen changes
 
+
+  useEffect(() => {
+    const handleCopyClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.classList.contains("copy-btn")) {
+        const codeToCopy = target.getAttribute("data-clipboard-text");
+        if (codeToCopy) {
+          navigator.clipboard.writeText(codeToCopy).then(() => {
+            const originalText = target.textContent;
+            target.textContent = "Copied";
+            setTimeout(() => {
+              if (target) target.textContent = originalText;
+            }, 2000); // Revert back after 2 seconds
+          });
+        }
+      }
+    };
+
+    document.addEventListener("click", handleCopyClick);
+    return () => document.removeEventListener("click", handleCopyClick);
+  }, []);
+
   const sendMessage = async () => {
     if (input.trim() === "") return;
 
@@ -48,10 +76,6 @@ const Chatbot: FC = () => {
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true); // Set loading state to true to show typing message
-
-    // Add typing indicator for bot
-    // const typingIndicator: Message = { text: 'typing...', sender: 'bot' };
-    // setMessages((prev) => [...prev, typingIndicator]);
 
     try {
       // Simple check to see if user is asking about courses
@@ -202,11 +226,22 @@ const Chatbot: FC = () => {
               );
 
               return {
-                text: `<div class="code-block-wrapper"><pre><code class="language-${language}">${highlightedCode}</code></pre></div>`,
+                text: `
+                  <div class="code-block-wrapper">
+                    <div class="code-header">
+                      <span class="language-label">${language.toLowerCase()}</span>
+                      <button class="copy-btn" data-clipboard-text="${
+                        codeText
+                          .replace(/^```(\w+)?\n/, "") // Remove ```language
+                          .replace(/```$/, "") // Remove ending ```
+                          .replace(/"/g, "&quot;") // Escape quotes
+                      }">Copy</button>
+                    </div>
+                    <pre><code class="language-${language}">${highlightedCode}</code></pre>
+                  </div>`,
                 sender: "bot",
               };
             }
-
 
             // If no code block found, return the message as is
             return {
@@ -258,6 +293,14 @@ const Chatbot: FC = () => {
       scrollToBottom();
     }
   };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    Prism.highlightAll(); // Highlight code after messages update
+  }, [messages]);
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
@@ -311,8 +354,10 @@ const Chatbot: FC = () => {
                 )}
 
                 <div
-                  className={`bg-gray-200 chat-bubble ${msg.sender}`}
-                  dangerouslySetInnerHTML={{ __html: msg.text }}
+                  className={`chat-bubble ${msg.sender}`}
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(msg.text),
+                  }}
                 />
 
                 {msg.sender === "user" && (
@@ -342,7 +387,7 @@ const Chatbot: FC = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Type a message..."
             />
             <button onClick={sendMessage}>Send</button>

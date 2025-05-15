@@ -160,6 +160,36 @@ body {
   white-space: pre;
 }
 
+/* Code Header */
+.code-header {
+  position: absolute;
+  top: 0; 
+  left: 0;
+  width: 100%;
+  background: #7b838c ; /* Tailwind's bg-gray-800 */
+  color: #f8fafc;
+  padding: 4px 12px;
+  border-top-right-radius: 12px;
+  border-top-left-radius: 0;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Code Header Button */
+.code-header button {
+  background: none;
+  border: none;
+  color: #FFF;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+
 /* Code Block Scrollbar */
 .code-block-wrapper::-webkit-scrollbar {
   height: 8px;
@@ -186,9 +216,10 @@ body {
 }
 
 .chat-bubble.bot {
-  background-color: #e5e7eb; /* Tailwind's bg-gray-200 */
+  background-color: #f3f4f6; /* Tailwind's bg-gray-200 */
   color: #111827;            /* Slightly darker text */
   border-top-left-radius: 0;
+  position: relative;
 }
 
 /* Input Area */
@@ -327,6 +358,17 @@ body {
 /* Dark Theme Code Block Text Color */
 .dark .code-block-wrapper pre code {
   color: #f0f0f0; /* White color for code text in dark mode */
+}
+
+/* Code Header */
+.dark .code-header {
+  background: #2d3748; /* Tailwind's gray-800 */
+  color: #f8fafc;       /* Tailwind's slate-50 */
+}
+
+.dark .code-header button {
+  background: #2d3748; /* Tailwind's gray-800 */
+  color: #f8fafc;       /* Tailwind's slate-50 */
 }
 
 

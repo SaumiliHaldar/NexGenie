@@ -155,11 +155,6 @@ body {
   margin-top: 0.5rem;
 }
 
-.code-block-wrapper pre {
-  margin: 0;
-  white-space: pre;
-}
-
 /* Code Header */
 .code-header {
   position: absolute;
@@ -183,30 +178,47 @@ body {
 .code-header button {
   background: none;
   border: none;
-  color: #FFF;
+  color: #f8fafc;
   cursor: pointer;
   font-size: 12px;
   font-weight: bold;
 }
 
-
-/* Code Block Scrollbar */
-.code-block-wrapper::-webkit-scrollbar {
-  height: 8px;
+/* Code Block */
+.chat-bubble.bot .code-block-wrapper {
+  overflow-x: auto;              /* Enable horizontal scrolling */
+  padding: 0;                    /* Remove default padding if needed */
+  margin-top: 0.5rem;
+  max-width: 100%;
 }
 
-.code-block-wrapper::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.chat-bubble.bot .code-block-wrapper pre {
+  margin: 0;
+  white-space: pre;             /* Prevent wrapping */
+  background: transparent;      /* Remove black bg */
+  color: inherit;               /* Inherit text color from chat bubble */
+  font-size: 14px;
+  padding: 0.75rem;
 }
 
-.code-block-wrapper::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+/* X-axis Scrollbar for Code Block */
+.chat-bubble.bot .code-block-wrapper::-webkit-scrollbar {
+  height: 8px;  /* Same as your vertical scrollbar width */
 }
 
-.code-block-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #888888;
+.chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;  /* Same as your vertical scrollbar track */
 }
+
+.chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;  /* Same as your vertical scrollbar thumb */
+  border-radius: 4px;  /* Same as your vertical scrollbar thumb radius */
+}
+
+.chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #888888;  /* Same as your vertical scrollbar thumb hover */
+}
+
 
 /* Chat Bubble Colors */
 .chat-bubble.user {
@@ -217,7 +229,7 @@ body {
 
 .chat-bubble.bot {
   background-color: #f3f4f6; /* Tailwind's bg-gray-200 */
-  color: #111827;            /* Slightly darker text */
+  color: #111827;            /* Tailwind's text-gray-900 */
   border-top-left-radius: 0;
   position: relative;
 }
@@ -356,19 +368,28 @@ body {
 }
 
 /* Dark Theme Code Block Text Color */
-.dark .code-block-wrapper pre code {
+.dark .chat-bubble.bot .code-block-wrapper pre code {
   color: #f0f0f0; /* White color for code text in dark mode */
+}
+
+.dark .chat-bubble.bot .code-block-wrapper pre {
+  margin: 0;
+  white-space: pre;             /* Prevent wrapping */
+  background: transparent;      /* Remove black bg */
+  color: inherit;               /* Inherit text color from chat bubble */
+  font-size: 14px;
+  padding: 0.75rem;
 }
 
 /* Code Header */
 .dark .code-header {
-  background: #2d3748; /* Tailwind's gray-800 */
-  color: #f8fafc;       /* Tailwind's slate-50 */
+  background: #2d3748; /* Tailwind's bg-gray-800 */
+  color: #f8fafc;       /* Tailwind's text-gray-50 */
 }
 
 .dark .code-header button {
-  background: #2d3748; /* Tailwind's gray-800 */
-  color: #f8fafc;       /* Tailwind's slate-50 */
+  background: #2d3748; /* Tailwind's bg-gray-800 */
+  color: #f8fafc;       /* Tailwind's text-gray-50 */
 }
 
 
@@ -396,15 +417,15 @@ body {
   height: 8px;
 }
 
-.dark .code-block-wrapper::-webkit-scrollbar-track {
+.dark .chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-track {
   background: #1a1a2e;
 }
 
-.dark .code-block-wrapper::-webkit-scrollbar-thumb {
+.dark .chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-thumb {
   background: #444c5e;
   border-radius: 4px;
 }
 
-.dark .code-block-wrapper::-webkit-scrollbar-thumb:hover {
+.dark .chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-thumb:hover {
   background: #5c6370;
 }

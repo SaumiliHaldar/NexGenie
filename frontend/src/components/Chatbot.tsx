@@ -7,7 +7,6 @@ import DOMPurify from "dompurify";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.min.css"; // Importing the theme
 import "prismjs/plugins/autoloader/prism-autoloader"; // Import the autoloader to all languages
-// import "prismjs/components/prism-python.min.js"; // Import the specific language if needed
 
 // Configure autoloader language path here
 Prism.plugins.autoloader.languages_path =
@@ -190,6 +189,8 @@ const Chatbot: FC = () => {
           "program",
           "logic",
           "wap",
+          "print",
+          "display",
           "algorithm",
           "debug",
           "syntax",

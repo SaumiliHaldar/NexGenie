@@ -98,7 +98,7 @@ async def greet(request: Request):
             "Casually mention 1–2 of those in your reply. Don’t explain what the user said."
         )
 
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         response = model.generate_content(prompt)
 
         reply = response.text.strip()
@@ -125,7 +125,7 @@ async def process_query(request_body: RequestBody):
 
     try:
         # Create a generative model
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         
         # Generate content based on the user's input
         prompt = (
@@ -214,7 +214,7 @@ def answer_from_db(query: str, k: int = 3) -> list:
 
         results = []
         # Initialize Gemini model (done only once for reuse)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
 
         for row in courses:
             try:
@@ -299,7 +299,7 @@ Prerequisites: {row['Prerequisites']}"""
         results = []
 
         # Initialize Gemini model (done only once for reuse)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
 
         for idx in I[0]:
             if idx >= len(filtered_courses):
@@ -458,7 +458,7 @@ async def get_roadmap(request: Request):
 
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         response = model.generate_content(roadmap_prompt)
         roadmap_text = response.text.strip()
 
@@ -503,7 +503,7 @@ async def ask_general_question(request: Request):
     )
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         response = model.generate_content(prompt)
         answer = response.text.strip()
 

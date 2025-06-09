@@ -190,6 +190,17 @@ Prerequisites: {row['Prerequisites']}"""
 # Call once on startup
 load_courses_data()
 
+def format_price(price):
+    try:
+        if isinstance(price, (int, float)) and price == 0:
+            return "Free"
+        if isinstance(price, str) and price.strip().lower() in ["0", "free"]:
+            return "Free"
+        return str(price)
+    except:
+        return str(price)
+
+
 def extract_keywords(query: str) -> list:
     query = query.lower()
     stop_words = set([
@@ -233,7 +244,7 @@ def answer_from_db(query: str, k: int = 3) -> list:
             course_data = {
                 "name": str(row['Name']),
                 "description": summarized_description,
-                "price": str(row['Price']),
+                "price": format_price(row['Price']),
                 "level": str(row['Level']),
                 "benefits": summarized_benefits,
                 "prerequisites": summarized_prerequisites
@@ -308,7 +319,7 @@ Prerequisites: {row['Prerequisites']}"""
 
             course_data = {
                 "name": str(row['Name']),
-                    "price": str(row['Price']),
+                    "price": format_price(row['Price']),
                     "level": str(row['Level']),
                     "thumbnail": str(row.get("Thumbnail", "")),
 
@@ -358,7 +369,7 @@ async def ask_course(request: Request):
                 # Append the summarized or original course details
                 course_data.append({
                     "name": str(row['Name']),
-                    "price": str(row['Price']),
+                    "price": format_price(row['Price']),
                     "level": str(row['Level']),
                     "thumbnail": str(row.get("Thumbnail", "")),
                 })

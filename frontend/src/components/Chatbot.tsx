@@ -133,7 +133,14 @@ const Chatbot: FC = () => {
               <br/>
               <strong>${course.name}</strong><br/>
               <strong>• Level:</strong> ${course.level}<br/>
-              <strong>• Price:</strong> ₹${course.price}<br/>
+              <strong>• Price:</strong> ${
+                String(course.price).trim() === "0" ||
+                String(course.price)
+                  .toLowerCase()
+                  .trim() === "free"
+                  ? "Free"
+                  : `₹${course.price}`
+              }<br/>
             `,
             sender: "bot",
           })),
@@ -299,13 +306,18 @@ const Chatbot: FC = () => {
           transition: "opacity 0.3s ease",
         }}
       >
-        <img src="https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-smiling-cute-robot-chat-bot-in-speech-bubble-png-image_5008700.png" alt="Chatbot icon" width={50} height={50} />
+        <img
+          src="/assets/nexgenie.png"
+          alt="Chatbot icon"
+          width={50}
+          height={50}
+        />
       </div>
 
       {isOpen && (
         <div className="chat-window">
           <div className="chat-header">
-            <img src="https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-smiling-cute-robot-chat-bot-in-speech-bubble-png-image_5008700.png" alt="icon" width={30} height={30} />
+            <img src="/assets/nexgenie.png" alt="icon" width={30} height={30} />
             <span className="chat-title">NexGenie</span>
             <button className="close-button" onClick={toggleChat}>
               <FontAwesomeIcon icon={faTimes} />
@@ -318,7 +330,7 @@ const Chatbot: FC = () => {
                 {msg.sender === "bot" && (
                   <img
                     className="avatar bot-avatar"
-                    src="https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-smiling-cute-robot-chat-bot-in-speech-bubble-png-image_5008700.png"
+                    src="/assets/nexgenie.png"
                     alt="Bot Avatar"
                     width={30}
                     height={30}
@@ -333,7 +345,7 @@ const Chatbot: FC = () => {
                 {msg.sender === "user" && (
                   <img
                     className="avatar user-avatar"
-                    src="https://cdn.icon-icons.com/icons2/1378/PNG/512/avatardefault_92824.png"
+                    src="/assets/user_avatar.png"
                     alt="User Avatar"
                   />
                 )}
@@ -343,7 +355,7 @@ const Chatbot: FC = () => {
               <div className="message bot">
                 <img
                   className="avatar bot-avatar"
-                  src="https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-smiling-cute-robot-chat-bot-in-speech-bubble-png-image_5008700.png"
+                  src="/assets/nexgenie.png"
                   alt="Bot Avatar"
                   width={30}
                   height={30}

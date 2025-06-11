@@ -1,6 +1,6 @@
 # NexGenie
 
-This repository contains the source code for NexGenie, an advanced AI-powered chatbot designed to enhance the LearnNexus e-learning portal. Integrated into LearnNexus, NexGenie delivers personalized, interactive support to students, teachers, and administrators, offering tailored course recommendations, real-time coding assistance, and job/internship guidance.
+This repository contains the source code for NexGenie, an advanced AI-powered chatbot designed to enhance the LearnNexus e-learning portal. Integrated into LearnNexus, NexGenie delivers personalized, interactive support to students, teachers, and administrators, offering tailored course recommendations, and real-time coding assistance.
 
 ## Table of Contents
 
@@ -16,24 +16,20 @@ This repository contains the source code for NexGenie, an advanced AI-powered ch
 
 ## About the Project
 
-NexGenie is designed to enhance the LearnNexus e-learning portal by offering a chatbot that interacts with users to provide:
-
-- **Course Guidance**: Suggests relevant courses based on user interests and academic goals.
-- **Job and Internship Search**: Helps users find job and internship opportunities tailored to their skills and career aspirations.
-- **Coding Assistance**: Provides real-time solutions to coding problems and queries directly on the LearnNexus platform, eliminating the need to visit other sites for clarification.
+NexGenie is an AI-powered chatbot integrated into the LearnNexus Learning Management System (LMS). It provides real-time academic support, coding assistance, and personalized learning guidance directly within the platform, enhancing user engagement and improving the overall learning experience.
 
 ## Features
 
-- **AI-Powered Chatbot**: Engages with users to provide personalized course recommendations, job/internship opportunities, and coding support.
+- **Course Guidance**: Suggests relevant courses based on user interests and academic goals.
+- **Learning Roadmaps**: Generates personalized step-by-step learning paths tailored to users' career goals or skill development needs.
+- **Real-Time Coding Assistance**: Provides immediate solutions to programming problems directly within the LearnNexus platform using AI-generated code snippets and explanations.
 - **Seamless Integration**: Fully integrated within the LearnNexus platform for a unified user experience.
-- **Real-Time Coding Assistance**: Offers immediate help with coding problems and queries directly within the platform.
-- **Job/Internship Portal Integration**: Assists users in finding job and internship opportunities based on their skills and preferences.
 
 ## Technologies Used
 
 - **FastAPI**: Web framework for building high-performance APIs.
 - **Python**: Core programming language for development.
-- **React.js**: Frontend framework for building dynamic user interfaces.
+- **React.js (with Typescript)**: Modern frontend framework for building responsive, scalable UI components.
 - **Google Gemini API**: Generates accurate and structured code snippets based on user prompts.
 - **SentenceTransformers**: Generates semantic embeddings for course recommendations.
 - **FAISS**: Provides fast similarity search over course embeddings.
@@ -62,14 +58,13 @@ To set up NexGenie locally, follow these steps:
     ```
 5. **Run the application**:
     ```bash
-      uvicorn app:app --reload
+    uvicorn app:app --reload
     ```
 
 ## Usage
 
 - **Access the LearnNexus platform**: Open your browser and navigate to [http://localhost:8000](http://localhost:8000).
-- **Interact with NexGenie**: Use the chatbot integrated within the platform for course recommendations, job/internship searches, and coding assistance.
-- **Explore job/internship opportunities**: Visit [http://localhost:8000/jobs](http://localhost:8000/jobs) for available positions.
+- **Interact with NexGenie**: Use the chatbot integrated within the platform for course recommendations, and coding assistance.
 
 ## Machine Learning Models
 
@@ -83,7 +78,7 @@ NexGenie utilizes a range of intelligent AI tools and services to deliver a resp
 - **Dialogflow ES**: Manages intents and dialog flows, structures user input, and integrates seamlessly with the FastAPI backend to handle complex queries and parameters.
 
 ### Code Understanding and Generation Models
-- **Google Gemini API (`gemini-1.5-flash`)**: For generating clean, structured, and language-specific code snippets based on user prompts.
+- **Google Gemini API (`gemini-2.0-flash`)**: For generating clean, structured, and language-specific code snippets based on user prompts.
 
 These models enable NexGenie to:
 - Understand and process natural language queries using semantic similarity.

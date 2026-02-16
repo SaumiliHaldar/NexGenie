@@ -1,13 +1,48 @@
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --secondary-text: #4b5563; /* Gray-600 */
+  --link-color: #2563eb; /* Blue-600 */
+  --link-hover: #1d4ed8; /* Blue-700 */
+}
+
+[data-theme="dark"] {
+  --bg-color: #000000;
+  --text-color: #ffffff;
+  --secondary-text: #a1a1aa; /* Gray-400 */
+  --link-color: #3b82f6; /* Blue-500 */
+  --link-hover: #60a5fa; /* Blue-400 */
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
+}
+
+/* Dark mode overrides for Chatbot SyntaxHighlighter (docco) */
+.dark .code-block-wrapper pre {
+  background: #1a1b26 !important; /* Tokyo Night style background */
+  color: #a9b1d6 !important;
+}
+
+.dark .code-block-wrapper span {
+  color: #a9b1d6 !important; /* Default fallback for dark mode */
+}
+
+/* Optional: targeted colors if docco uses specific colors we can match */
+.dark .code-block-wrapper span[style*="color: rgb(0, 0, 136)"], /* strings/keywords often blue in docco */
+.dark .code-block-wrapper span[style*="color: rgb(136, 0, 0)"]  /* comments/numbers often red in docco */ {
+  color: #7aa2f7 !important; /* Soft blue */
 }

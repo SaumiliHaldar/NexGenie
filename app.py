@@ -24,6 +24,7 @@ import threading
 import subprocess
 import sys
 import logging
+import traceback
 
 # Load environment variables from .env file
 load_dotenv()
@@ -31,7 +32,17 @@ load_dotenv()
 # Initialize FastAPI app
 app = FastAPI()
 
-# --- Excecute .py files within same directory ---
+# --- Utility to extract query from various formats ---
+async def get_user_query(request: Request):
+    try:
+        data = await request.json()
+        # Check common keys used by Dialogflow and custom frontends
+        query = data.get("query") or data.get("queryText") or data.get("user_query") or ""
+        return str(query).strip().lower(), data
+    except Exception:
+        return "", {}
+
+# --- Execute .py files within same directory ---
 @app.on_event("startup")
 def startup_tasks():
     logging.info("✅ Startup tasks initialized.")
@@ -82,13 +93,15 @@ logging.basicConfig(level=logging.INFO)
 # --- Handle User Greetings ---
 @app.post("/greet")
 async def greet(request: Request):
+    user_input, _ = await get_user_query(request)
+    
+    # Default fallback greeting
+    reply = "Hi there! I'm NexGenie. I can help you with coding, tech questions, learning roadmaps, and course advice. How can I assist you today?"
+    
+    if not user_input:
+        user_input = "hello" # Default to hello if empty
+
     try:
-        data = await request.json()
-        user_input = data.get("query", "").strip().lower()
-
-        if not user_input:
-            return {"error": "No input provided."}
-
         # Gemini prompt to detect and respond to any kind of greeting
         prompt = (
             f"The user said: '{user_input}'.\n"
@@ -98,23 +111,23 @@ async def greet(request: Request):
             "Casually mention 1–2 of those in your reply. Don’t explain what the user said."
         )
 
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
         response = model.generate_content(prompt)
-
-        reply = response.text.strip()
-
-        return {
-            "fulfillmentMessages": [
-                {
-                    "text": {
-                        "text": [reply]
-                    }
-                }
-            ]
-        }
-
+        if response and response.text:
+            reply = response.text.strip()
     except Exception as e:
-        return {"error": f"Failed to process greeting. {str(e)}"}
+        logging.error(f"Greeting Generation Error: {str(e)}")
+        logging.error(traceback.format_exc())
+
+    return {
+        "fulfillmentMessages": [
+            {
+                "text": {
+                    "text": [reply]
+                }
+            }
+        ]
+    }
 
 
 # --- Process General Query and Coding Questions ---
@@ -124,31 +137,26 @@ async def process_query(request_body: RequestBody):
     programminglanguage = request_body.queryResult.parameters.programminglanguage
 
     try:
-        # Create a generative model
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        
-        # Generate content based on the user's input
+        model = genai.GenerativeModel("gemini-2.5-flash")
         prompt = (
             f"Generate a {programminglanguage} code snippet that performs the following task: '{code}'. "
             "The response should be formatted as a clean, well-structured code snippet, similar to how it would appear in a code editor."
         )
         response = model.generate_content(prompt)
-        
-        # Return the generated text as a text message for Dialogflow
-        return {
-            "fulfillmentMessages": [
-                {
-                    "text": {
-                        "text": [
-                            response.text.strip()
-                        ]
-                    }
-                }
-            ]
-        }
+        reply = response.text.strip()
     except Exception as e:
-        print(f"Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Process Query Error: {str(e)}")
+        reply = f"I encountered an error generating the {programminglanguage} code for you. Please try again in a moment."
+
+    return {
+        "fulfillmentMessages": [
+            {
+                "text": {
+                    "text": [reply]
+                }
+            }
+        ]
+    }
 
 
 # --- Embed Courses Data ---
@@ -161,14 +169,13 @@ index = None
 
 def load_courses_data():
     global course_chunks, course_metadata, index
-    courses = get_courses_data()  # Fetch courses from MongoDB
+    try:
+        courses = get_courses_data()  # Fetch courses from MongoDB
+        course_chunks = []
+        course_metadata = []
 
-    # Convert each course to a "chunk" of information
-    course_chunks = []
-    course_metadata = []
-
-    for row in courses:
-        chunk = f"""Course: {row['Name']}
+        for row in courses:
+            chunk = f"""Course: {row['Name']}
 Description: {row['Description']}
 Tags: {row['Tags']}
 Category: {row['Category']}
@@ -176,16 +183,17 @@ Level: {row['Level']}
 Price: {row['Price']}
 Benefits: {row['Benefits']}
 Prerequisites: {row['Prerequisites']}"""
-        course_chunks.append(chunk)
-        course_metadata.append(row['Name'])
+            course_chunks.append(chunk)
+            course_metadata.append(row['Name'])
 
-    # Embed the chunks
-    embeddings = embedder.encode(course_chunks, convert_to_tensor=False)
-
-    # Create FAISS index
-    dim = embeddings[0].shape[0]
-    index = faiss.IndexFlatL2(dim)
-    index.add(embeddings)
+        if course_chunks:
+            embeddings = embedder.encode(course_chunks, convert_to_tensor=False)
+            dim = embeddings[0].shape[0]
+            index = faiss.IndexFlatL2(dim)
+            index.add(embeddings)
+            logging.info("✅ Course data loaded and indexed.")
+    except Exception as e:
+        logging.error(f"Failed to load course data: {e}")
 
 # Call once on startup
 load_courses_data()
@@ -215,90 +223,58 @@ def extract_keywords(query: str) -> list:
 # --- Helper: Answer based on MongoDB ---
 def answer_from_db(query: str, k: int = 3) -> list:
     if index is None or not course_chunks:
-        return {"summary": "Course data not loaded.", "courses": []}
+        return {"summary": "Course data is currently unavailable.", "courses": []}
     
-    # Check if the query is just asking for "courses"
     query_keywords = extract_keywords(query)
     if len(query_keywords) == 1 and query_keywords[0] in ["courses", "course"]:
-        # User is asking for all courses, so return all without filtering
-        courses = get_courses_data()  # Fetch data from MongoDB
-
+        courses = get_courses_data()
         results = []
-        # Initialize Gemini model (done only once for reuse)
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
         for row in courses:
             try:
                 description_prompt = f"Summarize the following course description in 2 lines max:\n\n{row['Description']}"
-                benefits_prompt = f"Summarize the following course benefits in 2 lines max:\n\n{row['Benefits']}"
-                prerequisites_prompt = f"Summarize the prerequisites below briefly:\n\n{row['Prerequisites']}"
-
                 summarized_description = model.generate_content(description_prompt).text.strip()
-                summarized_benefits = model.generate_content(benefits_prompt).text.strip()
-                summarized_prerequisites = model.generate_content(prerequisites_prompt).text.strip()
-            except Exception as e:
-                summarized_description = row['Description']
-                summarized_benefits = row['Benefits']
-                summarized_prerequisites = row['Prerequisites']
-
+            except Exception:
+                summarized_description = row['Description'][:150] + "..."
+            
             course_data = {
                 "name": str(row['Name']),
                 "description": summarized_description,
                 "price": format_price(row['Price']),
                 "level": str(row['Level']),
-                "benefits": summarized_benefits,
-                "prerequisites": summarized_prerequisites
+                "benefits": str(row['Benefits'])[:100] + "...",
+                "prerequisites": str(row['Prerequisites'])[:100] + "..."
             }
             results.append(course_data)
 
-        # --- Add a brief summary of the matched courses using Gemini ---
-        try:
-            course_list_text = "\n\n".join([f"{c['name']}" for c in results])
-            summary_prompt = (
-                f"Write a 1-2 line summary for someone interested in 'courses', "
-                f"based on the following course benefits:\n\n{course_list_text}.\n\n"
-            )
-            summary_text = model.generate_content(summary_prompt).text.strip()
-        except Exception:
-            summary_text = "Here are some top course recommendations."
-
-        return [summary_text, *results]
+        return ["Here are the available courses on our portal.", *results]
 
     else:
-        # If the query contains keywords, filter the courses based on the keywords
-        courses = get_courses_data()  # Fetch data from MongoDB
-
-        # Step 1: First extract keywords
+        courses = get_courses_data()
         keywords = extract_keywords(query)
-
-        # Step 2: Filter courses based on Tags
         filtered_courses = []
         for keyword in keywords:
-            temp = [course for course in courses if keyword.lower() in course['Tags'].lower()]
+            temp = [course for course in courses if keyword.lower() in str(course['Tags']).lower()]
             filtered_courses.extend(temp)
 
-        filtered_courses = [dict(t) for t in {tuple(d.items()) for d in filtered_courses}]  # Remove duplicates
+        # Remove duplicates
+        seen_names = set()
+        unique_filtered = []
+        for c in filtered_courses:
+            if c['Name'] not in seen_names:
+                seen_names.add(c['Name'])
+                unique_filtered.append(c)
+        
+        filtered_courses = unique_filtered
 
         if not filtered_courses:
-            return {"summary": "No courses found matching your query.", "courses": []}
+            return {"summary": "I couldn't find any courses matching those specific keywords. You can browse all our courses by asking for 'all courses'.", "courses": []}
 
-        # Step 3: Now embed filtered courses
         filtered_course_chunks = []
-        filtered_metadata = []
         for row in filtered_courses:
-            chunk = f"""Course: {row['Name']}
-Description: {row['Description']}
-Tags: {row['Tags']}
-Category: {row['Category']}
-Level: {row['Level']}
-Price: {row['Price']}
-Benefits: {row['Benefits']}
-Prerequisites: {row['Prerequisites']}"""
+            chunk = f"Course: {row['Name']}\nDescription: {row['Description']}\nTags: {row['Tags']}"
             filtered_course_chunks.append(chunk)
-            filtered_metadata.append(row['Name'])
-
-        if not filtered_course_chunks:
-            return {"summary": "No relevant courses found.", "courses": []}
 
         embeddings = embedder.encode(filtered_course_chunks, convert_to_tensor=False)
         temp_index = faiss.IndexFlatL2(embeddings[0].shape[0])
@@ -308,35 +284,24 @@ Prerequisites: {row['Prerequisites']}"""
         D, I = temp_index.search(query_vec, min(k, len(filtered_course_chunks)))
 
         results = []
-
-        # Initialize Gemini model (done only once for reuse)
-        model = genai.GenerativeModel("gemini-2.0-flash")
-
         for idx in I[0]:
-            if idx >= len(filtered_courses):
-                continue
+            if idx >= len(filtered_courses): continue
             row = filtered_courses[idx]
-
-            course_data = {
+            results.append({
                 "name": str(row['Name']),
-                    "price": format_price(row['Price']),
-                    "level": str(row['Level']),
-                    "thumbnail": str(row.get("Thumbnail", "")),
+                "price": format_price(row['Price']),
+                "level": str(row['Level']),
+                "thumbnail": str(row.get("Thumbnail", "")),
+            })
 
-            }
-            results.append(course_data)
-
+        summary_text = "Here are some top course recommendations based on your interest."
         try:
-            course_list_text = "\n\n".join([f"{c['name']}" for c in results])
-            summary_prompt = (
-                f"Write a 1-2 line summary for someone interested in '{' '.join(query_keywords)}', "
-                f"based on the following course benefits:\n\n{course_list_text}.\n\n"
-                f"Make sure to clearly mention '{' '.join(query_keywords)}' in the summary."
-            )
-
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            course_names = ", ".join([c['name'] for c in results])
+            summary_prompt = f"Write a 1-line friendly summary for someone interested in '{query}' based on these courses: {course_names}"
             summary_text = model.generate_content(summary_prompt).text.strip()
         except Exception:
-            summary_text = "Here are some top course recommendations based on your query."
+            pass
 
         return [summary_text, *results]
 
@@ -344,184 +309,133 @@ Prerequisites: {row['Prerequisites']}"""
 # --- Ask Course Route ---
 @app.post("/ask_course")
 async def ask_course(request: Request):
-    # Step 1: Parse the query from the request
-    data = await request.json()
-    query = data.get("query", "").strip().lower()  # Normalize query input by stripping spaces and converting to lowercase
+    query, _ = await get_user_query(request)
 
     if not query:
-        return {"error": "No query provided."}  # If no query is provided, return an error response
+        return {"summary": "Please let me know what you'd like to learn about!", "courses": []}
 
-    # Step 2: Clean the query to remove unnecessary words
-    simple_words = [
-        "what", "which", "tell", "me", "about", "find", "show", "give", "available",
-        "are", "on", "our", "portal", "the", "is", "for", "do", "you", "have", "any",
-        "a", "an", "i", "want", "to", "learn", "best"
-    ]
-    query_tokens = [word for word in query.split() if word not in simple_words]  # Remove simple words
+    query_tokens = [word for word in query.split() if word not in ["what", "show", "me", "find", "the", "a"]]
 
-    # Step 3: Check if query is asking for a general "course" or "courses"
     if "course" in query_tokens or "courses" in query_tokens:
-        if len(query_tokens) == 1:  # If the query contains only "course" or "courses"
-            courses = get_courses_data()  # Fetch all courses from MongoDB
-
-            course_data = []
-            for row in courses:
-                # Append the summarized or original course details
-                course_data.append({
-                    "name": str(row['Name']),
-                    "price": format_price(row['Price']),
-                    "level": str(row['Level']),
-                    "thumbnail": str(row.get("Thumbnail", "")),
-                })
+        if len(query_tokens) <= 2: # e.g., "show courses" or "courses"
+            courses = get_courses_data()
+            course_data = [{
+                "name": str(row['Name']),
+                "price": format_price(row['Price']),
+                "level": str(row['Level']),
+                "thumbnail": str(row.get("Thumbnail", "")),
+            } for row in courses]
 
             return {
                 "summary": "Here are all the available courses on our portal.",
                 "courses": course_data
             }
         
-        else:
-            # If the query contains a keyword, filter the courses
-            raw = answer_from_db(query)  # Call the function to get courses based on the query
-            
-            if isinstance(raw, dict):  # Error checking, if no courses were found
-                return raw
+    raw = answer_from_db(query)
+    if isinstance(raw, dict): return raw
+    if not raw or len(raw) < 2:
+        return {"summary": "No courses found matching your query.", "courses": []}
 
-            if not raw or len(raw) < 2:
-                return {"summary": "No courses found matching your query.", "courses": []}
+    return {
+        "summary": raw[0],
+        "courses": raw[1:]
+    }
 
-            summary = raw[0]  # First element is the summary
-            courses = raw[1:]  # Remaining elements are the filtered courses
-
-            # Process and return filtered courses
-            seen = set()
-            unique_courses = [] 
-
-            for course in courses:
-                if course["name"] not in seen:
-                    seen.add(course["name"])
-                    unique_courses.append(course)
-
-            return {
-                "summary": summary,
-                "courses": unique_courses  # Only include unique courses in the response
-            }
-
-def get_memory_usage():
-    process = os.popen(f'tasklist /FI "PID eq {os.getpid()}"').read()
-    return process
-
-# print(f"Memory Usage: {get_memory_usage()}")
-
-
-# Load spaCy English model
+# --- Roadmap Logic ---
 nlp = spacy.load("en_core_web_sm")
 
-# Extract occupation from query
 def extract_occupation(query: str) -> str:
     doc = nlp(query)
     target_phrases = []
-
-    # Check noun chunks for likely occupations
     for chunk in doc.noun_chunks:
         chunk_text = chunk.text.strip().lower()
-        if "roadmap" in chunk_text:
-            continue
+        if "roadmap" in chunk_text: continue
         if any(keyword in chunk_text for keyword in ["developer", "engineer", "scientist", "designer", "manager", "specialist", "analyst", "architect"]):
             target_phrases.append(chunk.text.strip())
-
-    if target_phrases:
-        occupation = target_phrases[0]
-    else:
-        # Fallback to longest noun chunk excluding 'roadmap'
-        noun_chunks = [chunk.text.strip() for chunk in doc.noun_chunks if "roadmap" not in chunk.text.lower()]
-        occupation = noun_chunks[0] if noun_chunks else "professional"
-
-    # Remove leading articles like "a", "an", "the"
-    occupation = re.sub(r"^(a|an|the)\s+", "", occupation, flags=re.IGNORECASE)
-    return occupation
+    
+    if target_phrases: return target_phrases[0]
+    
+    noun_chunks = [chunk.text.strip() for chunk in doc.noun_chunks if "roadmap" not in chunk.text.lower()]
+    return noun_chunks[0] if noun_chunks else "professional"
 
 
-# --- Get Roadmap Route ---
 @app.post("/get_roadmap")
 async def get_roadmap(request: Request):
-    data = await request.json()
-    query = data.get("query", "").strip().lower()
-
+    query, _ = await get_user_query(request)
     if not query:
         return {"error": "No query provided."}
 
-    # Extract key occupation keyword
-    important_keywords = extract_occupation(query)
-    print("Extracted:", important_keywords)
-
-    topic = important_keywords if important_keywords else "this career"
-
-    roadmap_prompt = (
-        f"Create a complete, detailed, and structured step-by-step learning roadmap to become a {topic}. "
-        f"Begin with a one-sentence introduction like 'This roadmap outlines the steps to becoming a proficient {topic}. Timeframes are estimates and depend on prior experience and learning pace.' "
-        f"Organize it into three main phases: Phase 1 - Foundational Knowledge, Phase 2 - Building Projects, and Phase 3 - Advanced Concepts & Specialization. "
-        f"Each phase should include numbered steps, important skills, tools, projects, certifications, and estimated timeframes. "
-        f"Use clear formatting with section headers like 'Phase 1: Foundational Knowledge (2-4 months)' and numbered steps underneath. "
-        f"Use bullet points '•' (instead of * or -) for points"
-        f"Use bullet points inside steps where helpful. End with a 'Tools & Resources:' section listing recommended platforms (starting with the LearnNexus portal), documentation, and editors. in points using bullets '•'. "
-        f"Do not use any Markdown formatting or symbols. Only return the roadmap content."
-    )
-
-
+    occupation = extract_occupation(query)
+    topic = re.sub(r"^(a|an|the)\s+", "", occupation, flags=re.IGNORECASE)
+    
+    # Default fallback roadmap text
+    roadmap_text = f"1. Start with foundations of {topic}.\n2. Build basic projects to apply knowledge.\n3. Learn advanced concepts and tools.\n4. Build an industry-ready portfolio."
+    
     try:
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        roadmap_prompt = (
+            f"Create a complete, detailed, and structured step-by-step learning roadmap to become a {topic}. "
+            f"Begin with a one-sentence introduction like 'This roadmap outlines the steps to becoming a proficient {topic}. Timeframes are estimates and depend on prior experience and learning pace.' "
+            f"Organize it into three main phases: Phase 1 - Foundational Knowledge, Phase 2 - Building Projects, and Phase 3 - Advanced Concepts & Specialization. "
+            f"Each phase should include numbered steps, important skills, tools, projects, certifications, and estimated timeframes. "
+            f"Use clear formatting with section headers like 'Phase 1: Foundational Knowledge (2-4 months)' and numbered steps underneath. "
+            f"Use bullet points '•' (instead of * or -) for points"
+            f"Use bullet points inside steps where helpful. End with a 'Tools & Resources:' section listing recommended platforms (starting with the LearnNexus portal), documentation, and editors. in points using bullets '•'. "
+            f"Do not use any Markdown formatting or symbols. Only return the roadmap content."
+        )
+
         response = model.generate_content(roadmap_prompt)
-        roadmap_text = response.text.strip()
-
-        return {
-            "roadmap_title": f"Roadmap to Become a {topic.title()}",
-            "roadmap": roadmap_text
-        }
-
+        if response and response.text:
+            roadmap_text = response.text.strip()
     except Exception as e:
-        return {"error": f"Failed to generate roadmap. {str(e)}"}
+        logging.error(f"Roadmap Error: {e}")
+
+    return {
+        "roadmap_title": f"Roadmap for {topic.title()}",
+        "roadmap": roadmap_text
+    }
 
 
-# --- Generate answers to general questions ---
+# --- Ask General Route ---
 @app.post("/ask_general")
 async def ask_general_question(request: Request):
-    data = await request.json()
-    user_query = data.get("query", "").strip().lower()
-
+    user_query, _ = await get_user_query(request)
     if not user_query:
-        raise HTTPException(status_code=400, detail="No query provided.")
+        return {"answer": "I'm here to help! Please ask a question."}
 
-    prompt = (
-        f"Provide a clear, structured answer to the following question:\n\n"
-        f"'{user_query}'\n\n"
-        f"Use this consistent structure regardless of question type:\n"
-        f"1. Core Explanation or Definition\n"
-        f"   • Provide a simple and clear explanation or definition\n"
-        f"   • If the question is about differences, start with a brief context\n"
-        f"2. Key Details or Breakdown\n"
-        f"   • List essential points, steps, or comparisons as bullet points\n"
-        f"   • Use '•' as bullet symbol, not *, -, or markdown\n"
-        f"3. Examples or Applications\n"
-        f"   • Give real-world use-cases, analogies, or brief examples (if applicable) \n"
-        f"4. Quick Summary\n"
-        f"   • Wrap up in 1–2 sentences with a neutral conclusion\n"
-        f"Formatting Rules:\n"
-        f"• Use plain and simple language — avoid jargon unless necessary\n"
-        f"• Do NOT include the original question in the answer\n"
-        f"• Do NOT use markdown symbols (*, _, #, etc.)\n"
-        f"• Avoid unnecessary repetition\n"
-        f"• Maintain a neutral, informative tone"
-    )
+    # Default fallback answer
+    answer = f"I'm sorry, I couldn't generate a detailed answer for '{user_query}' right now. It seems to be a complex topic or my AI service is busy. Please try asking again shortly!"
 
     try:
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        prompt = (
+            f"Provide a clear, structured answer to the following question:\n\n"
+            f"'{user_query}'\n\n"
+            f"Use this consistent structure regardless of question type:\n"
+            f"1. Core Explanation or Definition\n"
+            f"   • Provide a simple and clear explanation or definition\n"
+            f"   • If the question is about differences, start with a brief context\n"
+            f"2. Key Details or Breakdown\n"
+            f"   • List essential points, steps, or comparisons as bullet points\n"
+            f"   • Use '•' as bullet symbol, not *, -, or markdown\n"
+            f"3. Examples or Applications\n"
+            f"   • Give real-world use-cases, analogies, or brief examples (if applicable) \n"
+            f"4. Quick Summary\n"
+            f"   • Wrap up in 1–2 sentences with a neutral conclusion\n"
+            f"Formatting Rules:\n"
+            f"• Use plain and simple language — avoid jargon unless necessary\n"
+            f"• Do NOT include the original question in the answer\n"
+            f"• Do NOT use markdown symbols (*, _, #, etc.)\n"
+            f"• Avoid unnecessary repetition\n"
+            f"• Maintain a neutral, informative tone"
+        )
         response = model.generate_content(prompt)
-        answer = response.text.strip()
-
-        return {
-            "question": user_query,
-            "answer": answer
-        }
-
+        if response and response.text:
+            answer = response.text.strip()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate answer. {str(e)}")
+        logging.error(f"General Query Error: {e}")
+
+    return {
+        "question": user_query,
+        "answer": answer
+    }

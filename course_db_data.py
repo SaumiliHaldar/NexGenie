@@ -8,11 +8,14 @@ MONGO_URI = os.getenv("MONGO_URI")
 MONGO_DB = os.getenv("MONGO_DB")
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION")
 
+# One client for the process. MongoClient is thread-safe and pools its own
+# connections, so creating one per call just leaked pools and monitor threads.
+client = MongoClient(MONGO_URI)
+
+
 def get_courses_data():
     """Fetch all courses from MongoDB and return a list of flattened dicts."""
-    client = MongoClient(MONGO_URI)
-    db = client[MONGO_DB]
-    collection = db[MONGO_COLLECTION]
+    collection = client[MONGO_DB][MONGO_COLLECTION]
 
     docs = list(collection.find())
     courses = []

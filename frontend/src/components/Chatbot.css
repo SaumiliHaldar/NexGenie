@@ -1,14 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
 
 
-* {
+/* Scoped to the widget. A global * reset here would also reset the page
+   this chatbot is embedded in. */
+.chatbot,
+.chatbot *,
+.chat-window,
+.chat-window * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-}
-
-body {
-  font-family: 'Nunito', sans-serif;
 }
 
 /* Chatbot Container */
@@ -58,10 +59,11 @@ body {
   position: fixed;
   bottom: 30px;
   right: 30px;
-  width: 320px;
-  height: 500px;
+  width: 350px;
+  height: 530px;
   border-radius: 10px;
-  box-shadow: 0 8 16px rgba(0, 0, 0, 0.2);
+  /* The unit was missing here, which voided the whole declaration. */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -111,6 +113,9 @@ body {
   flex-grow: 1;
   padding: 12px;
   overflow-y: auto;
+  /* Setting only overflow-y makes the browser treat overflow-x as auto, so
+     one wide code block would scroll the whole conversation sideways. */
+  overflow-x: hidden;
   background-color: #f9f9f9;
 }
 
@@ -131,6 +136,7 @@ body {
 .avatar {
   width: 30px;
   height: 30px;
+  flex-shrink: 0;
   border-radius: 50%;
   margin: 0 8px;
 }
@@ -138,6 +144,10 @@ body {
 /* Chat Bubble Styles */
 .chat-bubble {
   max-width: 70%;
+  /* A flex item will not shrink below its content by default, and a code
+     block is very wide, so without this the bubble stretches past its
+     max-width and the first characters end up outside the window. */
+  min-width: 0;
   padding: 10px 15px;
   border-radius: 15px;
   font-size: 14px;
@@ -146,77 +156,129 @@ body {
   text-align: left;
 }
 
-/* Code Block Wrapper */
-.code-block-wrapper {
-  overflow-x: auto;
-  max-width: 100%;
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  margin-top: 0.5rem;
+/* Content inside a bubble. The reset above stripped list and heading
+   spacing, so everything the messages actually use is set back here. */
+.chat-bubble p + p,
+.chat-bubble p + ul,
+.chat-bubble ul + p {
+  margin-top: 8px;
 }
 
-/* Code Header */
+/* Room for the marker so wrapped lines indent under the text. */
+.chat-bubble ul {
+  padding-left: 18px;
+  list-style: disc;
+}
+
+.chat-bubble ol {
+  padding-left: 20px;
+  list-style: decimal;
+}
+
+.chat-bubble li {
+  margin: 3px 0;
+}
+
+/* Short snippets inside a sentence. Scoped to text elements so it never
+   touches the <code> the highlighter renders inside a fenced block. */
+.chat-bubble p code,
+.chat-bubble li code,
+.chat-bubble h4 code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  font-family: Consolas, Monaco, monospace;
+  font-size: 0.9em;
+}
+
+.chat-bubble .msg-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.chat-bubble strong {
+  font-weight: 700;
+}
+
+/* Course listing. All courses share one bubble, so each entry needs its own
+   spacing and a rule between them. */
+.course-item {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.course-thumb {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+/* Code block. The wrapper clips to its rounded corners and the scroll sits
+   on the <pre>, so a long line slides under a header that stays put. */
+.code-block-wrapper {
+  max-width: 100%;
+  margin: 10px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f1f3f5;
+}
+
 .code-header {
-  position: absolute;
-  top: 0; 
-  left: 0;
-  width: 100%;
-  background: #7b838c ; /* Tailwind's bg-gray-800 */
-  color: #f8fafc;
-  padding: 4px 12px;
-  border-top-right-radius: 12px;
-  border-top-left-radius: 0;
-  font-size: 12px;
-  font-weight: bold;
-  z-index: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: #e2e5e9;
+  color: #4b5563;
+  font-size: 12px;
 }
 
-/* Code Header Button */
+.code-header .language-label {
+  letter-spacing: 0.04em;
+}
+
 .code-header button {
   background: none;
   border: none;
-  color: #f8fafc;
+  padding: 0;
+  color: inherit;
   cursor: pointer;
-  font-size: 12px;
+  font: inherit;
   font-weight: bold;
+  white-space: nowrap;
+  opacity: 0.75;
 }
 
-/* Code Block */
-.chat-bubble.bot .code-block-wrapper {
-  overflow-x: auto;              /* Enable horizontal scrolling */
-  padding: 0;                    /* Remove default padding if needed */
-  margin-top: 0.5rem;
-  max-width: 100%;
+.code-header button:hover {
+  opacity: 1;
 }
 
-.chat-bubble.bot .code-block-wrapper pre {
+.code-block-wrapper pre {
   margin: 0;
-  white-space: pre;             /* Prevent wrapping */
-  background: transparent;      /* Remove black bg */
-  color: inherit;               /* Inherit text color from chat bubble */
-  font-size: 14px;
-  padding: 0.75rem;
+  padding: 12px;
+  overflow-x: auto;
+  white-space: pre;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-/* X-axis Scrollbar for Code Block */
-.chat-bubble.bot .code-block-wrapper::-webkit-scrollbar {
-  height: 8px;  /* Same as your vertical scrollbar width */
+.code-block-wrapper pre::-webkit-scrollbar {
+  height: 8px;
 }
 
-.chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-track {
-  background: #f1f1f1;  /* Same as your vertical scrollbar track */
+.code-block-wrapper pre::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-thumb {
-  background: #c1c1c1;  /* Same as your vertical scrollbar thumb */
-  border-radius: 4px;  /* Same as your vertical scrollbar thumb radius */
-}
-
-.chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #888888;  /* Same as your vertical scrollbar thumb hover */
+.code-block-wrapper pre::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
 }
 
 
@@ -352,6 +414,16 @@ body {
   color: #f0f0f0;
 }
 
+.dark .chat-bubble p code,
+.dark .chat-bubble li code,
+.dark .chat-bubble h4 code {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dark .course-item {
+  border-top-color: rgba(255, 255, 255, 0.14);
+}
+
 .dark .input-area {
   background-color: #1e1e2f;
 }
@@ -367,29 +439,23 @@ body {
   color: #ffffff;
 }
 
-/* Dark Theme Code Block Text Color */
-.dark .chat-bubble.bot .code-block-wrapper pre code {
-  color: #f0f0f0; /* White color for code text in dark mode */
+.dark .code-block-wrapper {
+  background: #1b1e2e;
 }
 
-.dark .chat-bubble.bot .code-block-wrapper pre {
-  margin: 0;
-  white-space: pre;             /* Prevent wrapping */
-  background: transparent;      /* Remove black bg */
-  color: inherit;               /* Inherit text color from chat bubble */
-  font-size: 14px;
-  padding: 0.75rem;
-}
-
-/* Code Header */
 .dark .code-header {
-  background: #2d3748; /* Tailwind's bg-gray-800 */
-  color: #f8fafc;       /* Tailwind's text-gray-50 */
+  background: #262a3d;
+  color: #b9bfcc;
 }
 
-.dark .code-header button {
-  background: #2d3748; /* Tailwind's bg-gray-800 */
-  color: #f8fafc;       /* Tailwind's text-gray-50 */
+.dark .code-block-wrapper pre,
+.dark .code-block-wrapper pre code,
+.dark .code-block-wrapper pre span {
+  color: #e6e6e6 !important;
+}
+
+.dark .code-block-wrapper pre::-webkit-scrollbar-thumb {
+  background: #444c5e;
 }
 
 
@@ -409,23 +475,4 @@ body {
 
 .dark .messages::-webkit-scrollbar-thumb:hover {
   background: #5c6370; /* Slightly brighter on hover */
-}
-
-
-/* Code Block Scrollbar (Dark Theme) */
-.dark .code-block-wrapper::-webkit-scrollbar {
-  height: 8px;
-}
-
-.dark .chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-track {
-  background: #1a1a2e;
-}
-
-.dark .chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-thumb {
-  background: #444c5e;
-  border-radius: 4px;
-}
-
-.dark .chat-bubble.bot .code-block-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #5c6370;
 }

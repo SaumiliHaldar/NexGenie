@@ -33,6 +33,9 @@ import typescript from "react-syntax-highlighter/dist/esm/languages/hljs/typescr
 import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import yaml from "react-syntax-highlighter/dist/esm/languages/hljs/yaml";
 
+// Set REACT_APP_API_URL in .env.local to point at a backend running locally.
+const API = process.env.REACT_APP_API_URL || "https://saumilihaldar-nexgenie.hf.space";
+
 // The default entry bundles ~190 languages. Registering only what a learner on
 // this portal is likely to ask for keeps the download far smaller. plaintext is
 // the fallback for an unlabelled block, so it has to be here too.
@@ -107,6 +110,54 @@ const resolveLanguage = (raw: string) => {
   const resolved = LANGUAGE_ALIASES[name] ?? name;
   return resolved in LANGUAGES ? resolved : "plaintext";
 };
+
+// How many letters are wrong between two words. Two letters typed the wrong
+// way round counts as one mistake, not two - "coures" for "course".
+const editDistance = (a: string, b: string): number => {
+  const d: number[][] = Array.from({ length: a.length + 1 }, (_, i) =>
+    Array.from({ length: b.length + 1 }, (_, j) =>
+      i === 0 ? j : j === 0 ? i : 0
+    )
+  );
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(
+        d[i - 1][j] + 1,
+        d[i][j - 1] + 1,
+        d[i - 1][j - 1] + cost
+      );
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
+    }
+  }
+
+  return d[a.length][b.length];
+};
+
+// Does the text mention the keyword, spelt right or one typo off?
+// Short keywords stay exact: "code" is one letter from "node" and "core",
+// "print" one from "point", so a typo allowance there would misread them.
+const fuzzyIncludes = (text: string, keyword: string): boolean => {
+  const lower = text.toLowerCase();
+  if (lower.includes(keyword)) return true;
+  if (keyword.length < 6) return false;
+
+  return lower
+    .split(/[^a-z0-9+#]+/)
+    .some(
+      (word) =>
+        Math.abs(word.length - keyword.length) <= 1 &&
+        editDistance(word, keyword) <= 1
+    );
+};
+
+const GREETINGS = /^(hi|hii|hlo|hello|hey|yo|good (morning|afternoon|evening))\b/i;
+
+const CODE_WORDS = ["code", "program", "logic", "wap", "print", "display",
+  "algorithm", "debug", "syntax", "function", "programming"];
 
 /** A message is a list of parts so text and code can sit in one bubble. */
 type Part =
@@ -329,38 +380,41 @@ const Chatbot: FC = () => {
     setLoading(true);
 
     try {
-      const isCourseQuery = input.toLowerCase().includes("course");
+      // Keywords first: free, instant, and right for most messages. Only when
+      // none of them match does the backend get asked what the message means.
+      let route = GREETINGS.test(input.trim())
+        ? "greet"
+        : fuzzyIncludes(input, "course")
+        ? "course"
+        : fuzzyIncludes(input, "roadmap")
+        ? "roadmap"
+        : CODE_WORDS.some((word) => fuzzyIncludes(input, word))
+        ? "code"
+        : "";
 
-      const greetingKeywords = [
-        "hi",
-        "hii",
-        "hlo",
-        "hello",
-        "hey",
-        "yo",
-        "good morning",
-        "good afternoon",
-        "good evening",
-      ];
-      const isGreeting = greetingKeywords.some((greet) =>
-        input
-          .toLowerCase()
-          .trim()
-          .match(new RegExp(`^${greet}\\b`, "i"))
-      );
+      if (!route) {
+        // A failure here must not lose the message - without this branch it
+        // would have gone to /ask_general anyway, so fall back to that.
+        try {
+          const guess = await axios.post(`${API}/intent`, { query: input });
+          route = guess.data?.intent ?? "general";
+        } catch {
+          route = "general";
+        }
+      }
 
-      if (isGreeting) {
+      if (route === "greet") {
         const response = await axios.post(
-          "https://saumilihaldar-nexgenie.hf.space/greet",
+          `${API}/greet`,
           { query: input }
         );
         const replies: Message[] = response.data.fulfillmentMessages.map(
           (msg: FulfillmentMessage) => botMessage(msg.text?.text[0] || "")
         );
         setMessages((prev) => [...prev, ...replies]);
-      } else if (isCourseQuery) {
+      } else if (route === "course") {
         const response = await axios.post(
-          "https://saumilihaldar-nexgenie.hf.space/ask_course",
+          `${API}/ask_course`,
           { query: input }
         );
         const summary: string = response.data.summary;
@@ -371,9 +425,9 @@ const Chatbot: FC = () => {
           // rather than shown as raw ** and --- characters.
           htmlMessage(`${toHtml(summary)}${courses.map(courseItem).join("")}`),
         ]);
-      } else if (input.toLowerCase().includes("roadmap")) {
+      } else if (route === "roadmap") {
         const response = await axios.post(
-          "https://saumilihaldar-nexgenie.hf.space/get_roadmap",
+          `${API}/get_roadmap`,
           { query: input }
         );
         const title = response.data.roadmap_title;
@@ -386,23 +440,9 @@ const Chatbot: FC = () => {
           ...prev,
           htmlMessage(`<h4 class="msg-title">${title}</h4>${toHtml(roadmap)}`),
         ]);
-      } else if (
-        [
-          "code",
-          "program",
-          "logic",
-          "wap",
-          "print",
-          "display",
-          "algorithm",
-          "debug",
-          "syntax",
-          "function",
-          "programming",
-        ].some((keyword) => input.toLowerCase().includes(keyword))
-      ) {
+      } else if (route === "code") {
         const response = await axios.post(
-          "https://saumilihaldar-nexgenie.hf.space/process_query",
+          `${API}/process_query`,
           {
             queryResult: {
               parameters: {
@@ -419,7 +459,7 @@ const Chatbot: FC = () => {
         setMessages((prev) => [...prev, ...replies]);
       } else {
         const response = await axios.post(
-          "https://saumilihaldar-nexgenie.hf.space/ask_general",
+          `${API}/ask_general`,
           { query: input }
         );
         setMessages((prev) => [

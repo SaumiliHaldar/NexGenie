@@ -8,6 +8,7 @@ import re
 import logging
 import traceback
 from collections import defaultdict
+from difflib import get_close_matches
 
 import google.generativeai as genai
 from pydantic import BaseModel
@@ -338,6 +339,11 @@ def search_courses(query: str, k: int = 3) -> dict:
     return {"summary": course_summary(query, names), "courses": courses}
 
 
+# The widget sends misspelt queries here now, so word checks allow a typo.
+def fuzzy_in(word: str, options) -> bool:
+    return word in options or bool(get_close_matches(word, options, n=1, cutoff=0.8))
+
+
 SHOW_ALL_WORDS = {"course", "courses", "list", "available"}
 FILLER_WORDS = {"what", "which", "show", "me", "find", "give", "tell", "about",
                 "the", "a", "an", "all", "your", "our", "are", "is", "there",
@@ -358,7 +364,7 @@ async def ask_course(request: Request):
     # the old rule sent any two-word query to the full list instead.
     words = [w for w in re.findall(r"\w+", query.lower()) if w not in FILLER_WORDS]
 
-    if words and set(words) <= SHOW_ALL_WORDS:
+    if words and all(fuzzy_in(w, SHOW_ALL_WORDS) for w in words):
         return {
             "summary": "Here are all the available courses on our portal.",
             "courses": [course_result(row) for row in course_metadata],
@@ -370,18 +376,25 @@ async def ask_course(request: Request):
 # --- Roadmap Logic ---
 nlp = spacy.load("en_core_web_sm")
 
+def says_roadmap(text: str) -> bool:
+    """The word "roadmap" itself, however spelt. It must not become the topic."""
+    return any(fuzzy_in(w, {"roadmap", "roadmaps"})
+               for w in re.findall(r"\w+", text.lower()))
+
+
 def extract_occupation(query: str) -> str:
     doc = nlp(query)
     target_phrases = []
     for chunk in doc.noun_chunks:
         chunk_text = chunk.text.strip().lower()
-        if "roadmap" in chunk_text: continue
+        if says_roadmap(chunk_text): continue
         if any(keyword in chunk_text for keyword in ["developer", "engineer", "scientist", "designer", "manager", "specialist", "analyst", "architect"]):
             target_phrases.append(chunk.text.strip())
     
     if target_phrases: return target_phrases[0]
     
-    noun_chunks = [chunk.text.strip() for chunk in doc.noun_chunks if "roadmap" not in chunk.text.lower()]
+    noun_chunks = [chunk.text.strip() for chunk in doc.noun_chunks
+                   if not says_roadmap(chunk.text)]
     return noun_chunks[0] if noun_chunks else "professional"
 
 

@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 import faiss
+import numpy as np
 import spacy
 from sentence_transformers import SentenceTransformer
 
@@ -350,6 +351,84 @@ FILLER_WORDS = {"what", "which", "show", "me", "find", "give", "tell", "about",
                 "do", "you", "have", "any", "on", "portal", "please"}
 
 
+# --- Intent detection ---
+# The widget routes on keywords first. When none match it asks here instead of
+# falling straight through to /ask_general, so a question that never says
+# "course" or "roadmap" still reaches the right endpoint.
+# Keep technology names out of these examples. With "python" in a course
+# example, "what is python" scored 0.72 against it and got course cards
+# instead of an answer.
+INTENT_EXAMPLES = {
+    "course": [
+        "what courses do you have",
+        "show me your classes",
+        "is there anything I can study here",
+        "do you have anything for beginners",
+        "what can I learn on this portal",
+        "I want to learn a new skill",
+    ],
+    "roadmap": [
+        "how do I become a developer",
+        "what is the career path for this job",
+        "steps to get into the industry",
+        "where do I start to get a job in this field",
+        "what should I learn to become an engineer",
+    ],
+    "code": [
+        "write a function that sorts an array",
+        "show me how to reverse a string",
+        "give me a snippet that reads a file",
+        "write a program that prints the result",
+    ],
+    "greet": [
+        "hey there",
+        "good morning",
+        "how are you doing",
+        "who are you",
+        "what is your name",
+        "what can you do",
+    ],
+    # Plain questions need examples of their own, or "what is python" lands on
+    # whichever other example happens to mention a technology.
+    "general": [
+        "what is an API",
+        "what does a compiler do",
+        "explain how recursion works",
+        "what is the difference between RAM and ROM",
+        "why is my program running slowly",
+        "what does this word mean",
+    ],
+}
+
+# Below this the query is nothing like any example and goes to /ask_general.
+# 0.40 measured best over 28 sample queries: lower sends more to the wrong
+# endpoint, higher drops matches that were right. An env var so it can be
+# retuned without a code change.
+INTENT_THRESHOLD = float(os.getenv("INTENT_THRESHOLD", "0.40"))
+
+INTENT_LABELS = [name for name, examples in INTENT_EXAMPLES.items() for _ in examples]
+_vectors = embedder.encode([e for examples in INTENT_EXAMPLES.values() for e in examples])
+# Pre-divided by length so a request only has to divide its own vector.
+INTENT_VECTORS = _vectors / np.linalg.norm(_vectors, axis=1, keepdims=True)
+
+
+def classify(query: str) -> str:
+    """Closest example wins. Blocking - call it in a thread."""
+    vec = embedder.encode([query])[0]
+    scores = INTENT_VECTORS @ (vec / np.linalg.norm(vec))
+    best = int(scores.argmax())
+    return INTENT_LABELS[best] if scores[best] >= INTENT_THRESHOLD else "general"
+
+
+@app.post("/intent")
+async def detect_intent(request: Request):
+    rate_limit(request)
+    query, _ = await get_user_query(request)
+    if not query:
+        return {"intent": "general"}
+    return {"intent": await asyncio.to_thread(classify, query)}
+
+
 # --- Ask Course Route ---
 @app.post("/ask_course")
 async def ask_course(request: Request):
@@ -376,6 +455,11 @@ async def ask_course(request: Request):
 # --- Roadmap Logic ---
 nlp = spacy.load("en_core_web_sm")
 
+ROADMAP_FILLER = {"for", "to", "become", "becoming", "a", "an", "the", "me",
+                  "give", "show", "i", "want", "how", "do", "of", "in", "get",
+                  "please", "my", "learning", "path", "career"}
+
+
 def says_roadmap(text: str) -> bool:
     """The word "roadmap" itself, however spelt. It must not become the topic."""
     return any(fuzzy_in(w, {"roadmap", "roadmaps"})
@@ -395,7 +479,13 @@ def extract_occupation(query: str) -> str:
     
     noun_chunks = [chunk.text.strip() for chunk in doc.noun_chunks
                    if not says_roadmap(chunk.text)]
-    return noun_chunks[0] if noun_chunks else "professional"
+    if noun_chunks: return noun_chunks[0]
+
+    # spaCy reads a bare "backend" or "devops" as an adjective, so it leaves no
+    # noun chunk at all. Use whatever the query says besides "roadmap".
+    rest = [w for w in query.split()
+            if not says_roadmap(w) and w.lower() not in ROADMAP_FILLER]
+    return " ".join(rest) or "professional"
 
 
 @app.post("/get_roadmap")

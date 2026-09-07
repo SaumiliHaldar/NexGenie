@@ -397,6 +397,12 @@ INTENT_EXAMPLES = {
         "what is the difference between RAM and ROM",
         "why is my program running slowly",
         "what does this word mean",
+        # Job hunting is not a learning roadmap. Without these, "hiring
+        # process" and "help with my resume" matched the roadmap examples,
+        # which are full of "job", "career" and "industry".
+        "how do companies hire people",
+        "what happens in a technical interview",
+        "how should I write my CV",
     ],
 }
 

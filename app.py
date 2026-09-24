@@ -443,6 +443,8 @@ async def ask_course(request: Request):
 
     if not query:
         return {"summary": "Please let me know what you'd like to learn about!", "courses": []}
+    # Refresh data on every request so it's never stale
+    await asyncio.to_thread(load_courses_data)
 
     # "courses" on its own means "show me everything". Anything with an actual
     # topic in it ("python course", "web development course") goes to search -

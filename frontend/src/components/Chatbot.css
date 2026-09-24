@@ -18,17 +18,7 @@
   bottom: 20px;
   right: 20px;
   z-index: 1000;
-  font-family: 'Nunito', sans-serif;
-}
-
-/* Floating Animation */
-@keyframes moveUpDown {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  font-family: var(--font-SourceSans), 'Source Sans Pro', sans-serif;
 }
 
 /* Chat Button Styles */
@@ -40,9 +30,8 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: background-color 0.3s;
-  animation: moveUpDown 1.5s ease-in-out infinite;
 }
 
 .chat-button img {
@@ -50,20 +39,16 @@
   height: 48px;
 }
 
-.chat-button:hover {
-  transform: scale(1.1);
-}
-
 /* Chat Window Base Styles (Light Theme Default) */
 .chat-window {
   position: fixed;
   bottom: 30px;
   right: 30px;
-  width: 350px;
-  height: 530px;
-  border-radius: 10px;
+  width: 320px;
+  height: 500px;
+  border-radius: 16px;
   /* The unit was missing here, which voided the whole declaration. */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -80,10 +65,10 @@
   display: flex;
   align-items: center;
   padding: 12px;
-  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  background: var(--sage);
   color: #ffffff;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
 }
 
 .chat-header img {
@@ -116,7 +101,7 @@
   /* Setting only overflow-y makes the browser treat overflow-x as auto, so
      one wide code block would scroll the whole conversation sideways. */
   overflow-x: hidden;
-  background-color: #f9f9f9;
+  background-color: #ffffff;
 }
 
 .message {
@@ -149,7 +134,7 @@
      max-width and the first characters end up outside the window. */
   min-width: 0;
   padding: 10px 15px;
-  border-radius: 15px;
+  border-radius: 16px;
   font-size: 14px;
   line-height: 1.4;
   word-break: break-word;
@@ -224,7 +209,7 @@
   margin: 10px 0;
   border-radius: 8px;
   overflow: hidden;
-  background: #f1f3f5;
+  background: var(--gray-50);
 }
 
 .code-header {
@@ -233,8 +218,8 @@
   align-items: center;
   gap: 12px;
   padding: 6px 12px;
-  background: #e2e5e9;
-  color: #4b5563;
+  background: var(--gray-100);
+  color: var(--slate);
   font-size: 12px;
 }
 
@@ -262,6 +247,8 @@
   margin: 0;
   padding: 12px;
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
   white-space: pre;
   background: transparent;
   font-size: 13px;
@@ -269,6 +256,7 @@
 }
 
 .code-block-wrapper pre::-webkit-scrollbar {
+  display: block;
   height: 8px;
 }
 
@@ -277,21 +265,23 @@
 }
 
 .code-block-wrapper pre::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 
 /* Chat Bubble Colors */
 .chat-bubble.user {
-  background-color: #d1d5db; /* Tailwind's bg-gray-300 */
-  color: #1f2937;            /* Tailwind's text-gray-800 */
+  /* sage.dark, not the brand sage: white on #8f9785 is only 3:1, which
+     fails AA for 14px body text. One shade down clears it at 5.6:1. */
+  background-color: var(--sage-dark);
+  color: #ffffff;
   border-top-right-radius: 0;
 }
 
 .chat-bubble.bot {
-  background-color: #f3f4f6; /* Tailwind's bg-gray-200 */
-  color: #111827;            /* Tailwind's text-gray-900 */
+  background-color: var(--gray-100);
+  color: var(--charcoal);
   border-top-left-radius: 0;
   position: relative;
 }
@@ -301,26 +291,30 @@
   display: flex;
   align-items: center;
   padding: 10px;
-  border-top: 1px solid #e0e0e0;
-  background-color: #f1f1f1;
+  border-top: 1px solid var(--gray-200);
+  background-color: #ffffff;
 }
 
 .input-area input {
   flex-grow: 1;
   padding: 10px;
   font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 20px;
+  border: 1px solid var(--gray-200);
+  border-radius: 9999px;
   outline: none;
   background-color: #ffffff;
   color: #000000;
 }
 
+.input-area input:focus {
+  border-color: var(--sage);
+}
+
 .input-area button {
-  background: linear-gradient(to right, #3b82f6, #8b5cf6);
+  background: var(--sage);
   color: #ffffff;
   border: none;
-  border-radius: 20px;
+  border-radius: 9999px;
   padding: 10px 15px;
   margin-left: 8px;
   cursor: pointer;
@@ -328,7 +322,7 @@
 }
 
 .input-area button:hover {
-  background: linear-gradient(to right, #2563eb, #7c3aed);
+  background: var(--sage-hover);
 }
 
 /* Scrollbar Styling */
@@ -337,16 +331,16 @@
 }
 
 .messages::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
 }
 
 .messages::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--gray-200);
   border-radius: 4px;
 }
 
 .messages::-webkit-scrollbar-thumb:hover {
-  background: #888888;
+  background: var(--gray-300);
 }
 
 /* Responsive Adjustments */
@@ -390,89 +384,4 @@
     width: 35px;
     height: 35px;
   }
-}
-
-/* ===================== */
-/*  DARK-THEME OVERRIDES */
-/* ===================== */
-.dark .chat-window {
-  background-color: #101826;
-  color: #ffffff;
-}
-
-.dark .messages {
-  background-color: #1a1a2e;
-}
-
-.dark .chat-bubble.user {
-  background-color: #4b5563; /* Tailwind's bg-gray-600 */
-  color: #f3f4f6;            /* Tailwind's text-gray-200 */
-}
-
-.dark .chat-bubble.bot {
-  background-color: #2b2b3c;
-  color: #f0f0f0;
-}
-
-.dark .chat-bubble p code,
-.dark .chat-bubble li code,
-.dark .chat-bubble h4 code {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.dark .course-item {
-  border-top-color: rgba(255, 255, 255, 0.14);
-}
-
-.dark .input-area {
-  background-color: #1e1e2f;
-}
-
-.dark .input-area input {
-  background-color: #2c2c3d;
-  color: #ffffff;
-  border: 1px solid #444444;
-}
-
-.dark .input-area button {
-  background: linear-gradient(to right, #3b82f6, #8b5cf6);
-  color: #ffffff;
-}
-
-.dark .code-block-wrapper {
-  background: #1b1e2e;
-}
-
-.dark .code-header {
-  background: #262a3d;
-  color: #b9bfcc;
-}
-
-.dark .code-block-wrapper pre,
-.dark .code-block-wrapper pre code,
-.dark .code-block-wrapper pre span {
-  color: #e6e6e6 !important;
-}
-
-.dark .code-block-wrapper pre::-webkit-scrollbar-thumb {
-  background: #444c5e;
-}
-
-
-/* Scrollbar Styling for Dark Theme */
-.dark .messages::-webkit-scrollbar {
-  width: 8px;
-}
-
-.dark .messages::-webkit-scrollbar-track {
-  background: #1a1a2e; /* Matches the dark message background */
-}
-
-.dark .messages::-webkit-scrollbar-thumb {
-  background: #444c5e; /* Subtle dark thumb */
-  border-radius: 4px;
-}
-
-.dark .messages::-webkit-scrollbar-thumb:hover {
-  background: #5c6370; /* Slightly brighter on hover */
 }

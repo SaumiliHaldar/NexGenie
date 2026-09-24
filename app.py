@@ -324,15 +324,51 @@ def course_result(row: dict) -> dict:
 
 
 def search_courses(query: str, k: int = 3) -> dict:
-    """Semantic search over the index built at startup. Blocking - call it in a
-    thread. Always returns the response shape, so callers need no unpacking."""
-    if index is None or not course_metadata:
+    """Filter courses by tag/category keywords first, then rank with FAISS.
+    Blocking - call it in a thread."""
+    courses = get_courses_data()
+    if not courses:
         return {"summary": "Course data is currently unavailable.", "courses": []}
 
-    query_vec = embedder.encode([query])
-    _, positions = index.search(query_vec, min(k, len(course_metadata)))
+    # Step 1: Extract keywords from query (remove filler/stop words)
+    keywords = [w for w in re.findall(r"\w+", query.lower())
+                if w not in FILLER_WORDS and w not in SHOW_ALL_WORDS]
 
-    courses = [course_result(course_metadata[i]) for i in positions[0]]
+    # Step 2: Filter courses whose Tags or Category match any keyword
+    filtered = []
+    for row in courses:
+        tags = row.get("Tags", "").lower()
+        category = row.get("Category", "").lower()
+        if any(kw in tags or kw in category for kw in keywords):
+            filtered.append(row)
+
+    # If no tag matches, fall back to searching all courses
+    if not filtered:
+        filtered = list(courses)
+
+    # Step 3: Embed only the filtered courses and search with FAISS
+    chunks = []
+    for row in filtered:
+        chunks.append(
+            f"Course: {row['Name']}\nDescription: {row['Description']}\n"
+            f"Tags: {row['Tags']}\nCategory: {row['Category']}\n"
+            f"Level: {row['Level']}\nPrice: {row['Price']}\n"
+            f"Benefits: {row['Benefits']}\nPrerequisites: {row['Prerequisites']}"
+        )
+
+    embeddings = embedder.encode(chunks, convert_to_tensor=False)
+    temp_index = faiss.IndexFlatL2(embeddings[0].shape[0])
+    temp_index.add(embeddings)
+
+    query_vec = embedder.encode([query])
+    _, positions = temp_index.search(query_vec, min(k, len(filtered)))
+
+    courses = []
+    for idx in positions[0]:
+        if idx < 0 or idx >= len(filtered):
+            continue
+        courses.append(course_result(filtered[idx]))
+
     if not courses:
         return {"summary": "No courses found matching your query.", "courses": []}
 
@@ -443,8 +479,6 @@ async def ask_course(request: Request):
 
     if not query:
         return {"summary": "Please let me know what you'd like to learn about!", "courses": []}
-    # Refresh data on every request so it's never stale
-    await asyncio.to_thread(load_courses_data)
 
     # "courses" on its own means "show me everything". Anything with an actual
     # topic in it ("python course", "web development course") goes to search -
@@ -452,9 +486,10 @@ async def ask_course(request: Request):
     words = [w for w in re.findall(r"\w+", query.lower()) if w not in FILLER_WORDS]
 
     if words and all(fuzzy_in(w, SHOW_ALL_WORDS) for w in words):
+        courses = get_courses_data()
         return {
             "summary": "Here are all the available courses on our portal.",
-            "courses": [course_result(row) for row in course_metadata],
+            "courses": [course_result(row) for row in courses],
         }
 
     # Embedding plus a Gemini call - both block, so keep them off the loop.

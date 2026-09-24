@@ -1,5 +1,24 @@
+/* The widget's own palette. Declared here, not pulled from globals.css, so
+   this file drops into any page and still looks right. Mirrors the brand
+   values, so if globals.css changes, change these to match. */
+
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
 
+.chatbot,
+.chat-window {
+  --sage: #8f9785;
+  --sage-hover: #7a8271;
+  --sage-dark: #636a5b;
+  --charcoal: #1c1b1b;
+  --slate: #474545;
+
+  /* Tailwind's default greys, the same ones the app's cards use. */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --scrollbar-thumb: #cbd5e1;
+}
 
 /* Scoped to the widget. A global * reset here would also reset the page
    this chatbot is embedded in. */

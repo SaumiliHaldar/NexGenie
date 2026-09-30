@@ -348,7 +348,7 @@ const Chatbot: FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatButtonRef = useRef<HTMLDivElement>(null);
+  const windowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMessages([
@@ -357,17 +357,6 @@ const Chatbot: FC = () => {
       ),
     ]);
   }, []);
-
-  useEffect(() => {
-    if (chatButtonRef.current) {
-      if (isOpen) {
-        chatButtonRef.current.style.animation = "none";
-      } else {
-        chatButtonRef.current.style.animation =
-          "moveUpDown 1.5s ease-in-out infinite";
-      }
-    }
-  }, [isOpen]);
 
   const sendMessage = async () => {
     if (input.trim() === "") return;
@@ -492,6 +481,20 @@ const Chatbot: FC = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Close on any click outside the window. Registered on the next tick so the
+  // click that opened it (e.g. the Header's NexGenie button) doesn't close it.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (!windowRef.current?.contains(e.target as Node)) setIsOpen(false);
+    };
+    const id = setTimeout(() => document.addEventListener("click", onClick));
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener("click", onClick);
+    };
+  }, [isOpen]);
+
   const toggleChat = () => {
     setIsOpen(!isOpen);
     if (!isOpen) {
@@ -507,7 +510,6 @@ const Chatbot: FC = () => {
     <div className="chatbot">
       <div
         className="chat-button"
-        ref={chatButtonRef}
         onClick={toggleChat}
         style={{
           visibility: isOpen ? "hidden" : "visible",
@@ -524,7 +526,7 @@ const Chatbot: FC = () => {
       </div>
 
       {isOpen && (
-        <div className="chat-window">
+        <div className="chat-window" ref={windowRef}>
           <div className="chat-header">
             <img src="/assets/nexgenie.png" alt="icon" width={30} height={30} />
             <span className="chat-title">NexGenie</span>

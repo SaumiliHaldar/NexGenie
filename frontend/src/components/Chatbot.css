@@ -1,8 +1,5 @@
-/* The widget's own palette. Declared here, not pulled from globals.css, so
-   this file drops into any page and still looks right. Mirrors the brand
-   values, so if globals.css changes, change these to match. */
-
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+
 
 .chatbot,
 .chat-window {
@@ -49,13 +46,12 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.08);
-  transition: background-color 0.3s;
+  background: transparent;
 }
 
 .chat-button img {
-  width: 48px;
-  height: 48px;
+  width: 54px;
+  height: 54px;
 }
 
 /* Chat Window Base Styles (Light Theme Default) */
@@ -384,8 +380,8 @@
   }
 
   .chat-button img {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
   }
 }
 
@@ -400,7 +396,7 @@
   }
 
   .chat-button img {
-    width: 35px;
-    height: 35px;
+    width: 40px;
+    height: 40px;
   }
 }

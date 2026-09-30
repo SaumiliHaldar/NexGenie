@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
-
+/* The widget's own palette. Declared here, not pulled from globals.css, so
+   this file drops into any page and still looks right. Mirrors the brand
+   values, so if globals.css changes, change these to match. */
 
 .chatbot,
 .chat-window {

@@ -33,8 +33,12 @@ import typescript from "react-syntax-highlighter/dist/esm/languages/hljs/typescr
 import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import yaml from "react-syntax-highlighter/dist/esm/languages/hljs/yaml";
 
-// Set REACT_APP_API_URL in .env.local to point at a backend running locally.
-const API = process.env.REACT_APP_API_URL || "https://saumilihaldar-nexgenie.hf.space";
+// This file is shared with LearnNexus (Next.js), which only exposes NEXT_PUBLIC_
+// variables, so each setting is read under both names.
+const API =
+  process.env.NEXT_PUBLIC_NEXGENIE_BACKEND ||
+  process.env.REACT_APP_NEXGENIE_BACKEND ||
+  "http://127.0.0.1:8000";
 
 // The default entry bundles ~190 languages. Registering only what a learner on
 // this portal is likely to ask for keeps the download far smaller. plaintext is
@@ -176,7 +180,10 @@ interface FulfillmentMessage {
 }
 
 interface Course {
+  id?: string;
   name: string;
+  category?: string;
+  tags?: string[];
   level: string;
   // The backend formats this, so it arrives as "Free" or a number as text.
   price: string;
@@ -201,8 +208,31 @@ const formatPrice = (price: string) => {
   return value === "0" || value.toLowerCase() === "free" ? "Free" : `₹${value}`;
 };
 
-const courseItem = (course: Course) => `
-  <div class="course-item">
+// Where course pages live. Set it to http://localhost:3000 for a local copy.
+const LEARNNEXUS =
+  process.env.NEXT_PUBLIC_LEARNNEXUS_URL ||
+  process.env.REACT_APP_LEARNNEXUS_URL ||
+  "http://localhost:3000";
+
+// Same query LearnNexus' CourseCard adds, so the page shows the title,
+// category and tags while the course loads.
+const courseHref = (course: Course) => {
+  const qs = new URLSearchParams({ title: course.name });
+  if (course.category) qs.set("category", course.category);
+  if (course.tags?.length) qs.set("tags", course.tags.join(","));
+  return `${LEARNNEXUS}/course/${encodeURIComponent(course.id!)}?${qs}`;
+};
+
+// Inside LearnNexus the course is on the same site, so open it in this tab;
+// from anywhere else, a new tab.
+const courseItem = (course: Course) => {
+  const href = course.id ? courseHref(course) : "";
+  const newTab = !href.startsWith(window.location.origin);
+  const open = href
+    ? `a href="${escapeHtml(href)}"${newTab ? ' target="_blank" rel="noopener noreferrer"' : ""}`
+    : "div";
+  return `
+  <${open} class="course-item">
     ${
       course.thumbnail
         ? `<img class="course-thumb" src="${escapeHtml(
@@ -213,7 +243,8 @@ const courseItem = (course: Course) => `
     <strong>${escapeHtml(course.name)}</strong><br/>
     <strong>• Level:</strong> ${escapeHtml(course.level)}<br/>
     <strong>• Price:</strong> ${escapeHtml(formatPrice(course.price))}
-  </div>`;
+  </${course.id ? "a" : "div"}>`;
+};
 
 /** Escapes the line first, so anything the model writes stays text, then
     turns **bold** and `code` into tags. */
@@ -529,7 +560,10 @@ const Chatbot: FC = () => {
         <div className="chat-window" ref={windowRef}>
           <div className="chat-header">
             <img src="/assets/nexgenie.png" alt="icon" width={30} height={30} />
-            <span className="chat-title">NexGenie</span>
+            <span className="chat-title">
+              NexGenie
+              <small className="chat-subtitle">LearnNexus AI Assistant</small>
+            </span>
             <button className="close-button" onClick={toggleChat}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
@@ -555,7 +589,9 @@ const Chatbot: FC = () => {
                       <div
                         key={i}
                         dangerouslySetInnerHTML={{
-                          __html: DOMPurify.sanitize(part.html),
+                          __html: DOMPurify.sanitize(part.html, {
+                            ADD_ATTR: ["target"],
+                          }),
                         }}
                       />
                     )

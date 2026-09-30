@@ -98,6 +98,15 @@
   font-weight: bold;
   flex-grow: 1;
   text-align: left;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.chat-subtitle {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.85;
 }
 
 .close-button {
@@ -140,6 +149,12 @@
   flex-shrink: 0;
   border-radius: 50%;
   margin: 0 8px;
+}
+
+/* The robot's arms reach the image edges, so a circle clips them. */
+.bot-avatar {
+  border-radius: 0;
+  object-fit: contain;
 }
 
 /* Chat Bubble Styles */
@@ -208,6 +223,16 @@
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+a.course-item {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.course-item:hover strong:first-of-type {
+  text-decoration: underline;
 }
 
 .course-thumb {
@@ -296,7 +321,7 @@
 }
 
 .chat-bubble.bot {
-  background-color: var(--gray-100);
+  background-color: var(--gray-200);
   color: var(--charcoal);
   border-top-left-radius: 0;
   position: relative;

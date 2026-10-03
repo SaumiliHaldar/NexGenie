@@ -9,6 +9,7 @@ import logging
 import traceback
 from collections import defaultdict
 from difflib import get_close_matches
+from fastapi.responses import Response
 
 import google.generativeai as genai
 from pydantic import BaseModel
@@ -46,6 +47,10 @@ async def root():
 @app.get("/healthz")
 async def health_check():
     return {"status": "ok"}
+
+@app.head("/healthz")
+async def health_check_head():
+    return Response(status_code=200)
 
 # Add CORS middleware
 app.add_middleware(

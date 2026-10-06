@@ -321,6 +321,7 @@ def course_summary(query: str, names: str) -> str:
 
 def course_result(row: dict) -> dict:
     return {
+        "id": str(row.get("Id", "")),
         "name": str(row["Name"]),
         "price": format_price(row["Price"]),
         "level": str(row["Level"]),

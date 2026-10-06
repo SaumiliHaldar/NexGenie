@@ -22,6 +22,7 @@ def get_courses_data():
     for doc in docs:
         d = {k.lower(): v for k, v in doc.items()}
         row = {
+            "Id": str(doc.get("_id", "")),
             "Name": d.get("name", ""),
             "Description": d.get("description", ""),
             "Category": d.get("categories", ""),

@@ -1,5 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  /* Same palette as LearnNexus and the chatbot widget (Chatbot.css). */
+  /* Same palette as LearnNexus and the chatbot (tailwind.config.js). */
   --bg-color: #ffffff;
   --text-color: #1c1b1b;
   --secondary-text: #474545;

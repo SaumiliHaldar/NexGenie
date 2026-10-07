@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect, FC } from "react";
 import axios from "axios";
-import "./Chatbot.css";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import DOMPurify from "dompurify";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import { docco } from "react-syntax-highlighter/dist/esm/styles/hljs";
@@ -33,12 +30,9 @@ import typescript from "react-syntax-highlighter/dist/esm/languages/hljs/typescr
 import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import yaml from "react-syntax-highlighter/dist/esm/languages/hljs/yaml";
 
-// This file is shared with LearnNexus (Next.js), which only exposes NEXT_PUBLIC_
-// variables, so each setting is read under both names.
-const API =
-  process.env.NEXT_PUBLIC_NEXGENIE_BACKEND ||
-  process.env.REACT_APP_NEXGENIE_BACKEND ||
-  "http://127.0.0.1:8000";
+// Set both in .env.local; REACT_APP_LEARNNEXUS_URL is where course pages live.
+const API = process.env.REACT_APP_NEXGENIE_BACKEND;
+const LEARNNEXUS = process.env.REACT_APP_LEARNNEXUS_URL;
 
 // The default entry bundles ~190 languages. Registering only what a learner on
 // this portal is likely to ask for keeps the download far smaller. plaintext is
@@ -182,8 +176,6 @@ interface FulfillmentMessage {
 interface Course {
   id?: string;
   name: string;
-  category?: string;
-  tags?: string[];
   level: string;
   // The backend formats this, so it arrives as "Free" or a number as text.
   price: string;
@@ -208,49 +200,40 @@ const formatPrice = (price: string) => {
   return value === "0" || value.toLowerCase() === "free" ? "Free" : `₹${value}`;
 };
 
-// Where course pages live. Set it to http://localhost:3000 for a local copy.
-const LEARNNEXUS =
-  process.env.NEXT_PUBLIC_LEARNNEXUS_URL ||
-  process.env.REACT_APP_LEARNNEXUS_URL ||
-  "http://localhost:3000";
+// The title query lets the course page show the name while the course loads,
+// the same as LearnNexus' CourseCard does. LearnNexus is another site, so a new tab.
+const courseHref = (course: Course) =>
+  course.id
+    ? `${LEARNNEXUS}/course/${encodeURIComponent(course.id)}?${new URLSearchParams({ title: course.name })}`
+    : undefined;
 
-// Same query LearnNexus' CourseCard adds, so the page shows the title,
-// category and tags while the course loads.
-const courseHref = (course: Course) => {
-  const qs = new URLSearchParams({ title: course.name });
-  if (course.category) qs.set("category", course.category);
-  if (course.tags?.length) qs.set("tags", course.tags.join(","));
-  return `${LEARNNEXUS}/course/${encodeURIComponent(course.id!)}?${qs}`;
-};
-
-// Inside LearnNexus the course is on the same site, so open it in this tab;
-// from anywhere else, a new tab.
 const courseItem = (course: Course) => {
-  const href = course.id ? courseHref(course) : "";
-  const newTab = !href.startsWith(window.location.origin);
-  const open = href
-    ? `a href="${escapeHtml(href)}"${newTab ? ' target="_blank" rel="noopener noreferrer"' : ""}`
-    : "div";
+  const href = courseHref(course);
   return `
-  <${open} class="course-item">
+  <${href ? `a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"` : "div"} class="course-item group block mt-3.5 pt-3.5 border-t border-black/10">
     ${
       course.thumbnail
-        ? `<img class="course-thumb" src="${escapeHtml(
+        ? `<img class="block max-w-full h-auto rounded-lg mb-2" src="${escapeHtml(
             course.thumbnail
           )}" alt="${escapeHtml(course.name)}" />`
         : ""
     }
-    <strong>${escapeHtml(course.name)}</strong><br/>
+    <strong class="group-hover:underline">${escapeHtml(course.name)}</strong><br/>
     <strong>• Level:</strong> ${escapeHtml(course.level)}<br/>
     <strong>• Price:</strong> ${escapeHtml(formatPrice(course.price))}
-  </${course.id ? "a" : "div"}>`;
+  </${href ? "a" : "div"}>`;
 };
+
+const TITLE = 'class="text-[15px] font-bold mb-1.5"';
 
 /** Escapes the line first, so anything the model writes stays text, then
     turns **bold** and `code` into tags. */
 const inline = (line: string) =>
   escapeHtml(line)
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(
+      /`([^`]+)`/g,
+      '<code class="px-[5px] py-px rounded bg-black/[0.08] font-mono text-[0.9em]">$1</code>'
+    )
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
 
 /**
@@ -282,7 +265,7 @@ const toHtml = (text: string) => {
       flush();
     } else if (heading) {
       flush();
-      blocks.push(`<h4 class="msg-title">${inline(heading[1])}</h4>`);
+      blocks.push(`<h4 ${TITLE}>${inline(heading[1])}</h4>`);
     } else if (bullet) {
       if (ordered) flush();
       ordered = false;
@@ -339,6 +322,22 @@ const htmlMessage = (html: string): Message => ({
   sender: "bot",
 });
 
+// The [&_x] variants style the HTML injected into the bubble. min-w-0: a flex
+// item won't shrink below a wide code block, so it would push out of the window.
+const bubbleClass = (sender: Message["sender"]) =>
+  `max-w-[70%] min-w-0 px-[15px] py-2.5 rounded-2xl text-sm leading-[1.4] break-words text-left
+   [&_p+p]:mt-2 [&_p+ul]:mt-2 [&_ul+p]:mt-2 [&_ul]:pl-[18px] [&_ul]:list-disc
+   [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:my-[3px] ${
+     sender === "user"
+       ? // sage-dark: white on plain sage is only 3:1, failing AA.
+         "bg-sage-dark text-white rounded-tr-none"
+       : "bg-gray-200 text-charcoal rounded-tl-none"
+   }`;
+
+// The robot's arms reach the image edges, so only the user avatar is round.
+const avatarClass = (sender: Message["sender"]) =>
+  `w-[30px] h-[30px] shrink-0 mx-2 object-contain ${sender === "user" ? "rounded-full" : ""}`;
+
 const CodeBlock: FC<{ lang: string; source: string }> = ({ lang, source }) => {
   const [copied, setCopied] = useState(false);
 
@@ -349,22 +348,29 @@ const CodeBlock: FC<{ lang: string; source: string }> = ({ lang, source }) => {
     });
 
   return (
-    <div className="code-block-wrapper">
-      <div className="code-header">
-        <span className="language-label">{lang}</span>
-        <button className="copy-btn" onClick={copy}>
+    // The wrapper clips to its rounded corners and the scroll sits on the
+    // <pre>, so a long line slides under a header that stays put.
+    <div className="max-w-full my-2.5 rounded-lg overflow-hidden bg-gray-50">
+      <div className="flex justify-between items-center gap-3 px-3 py-1.5 bg-gray-100 text-slate text-xs">
+        <span className="tracking-[0.04em]">{lang}</span>
+        <button
+          onClick={copy}
+          className="font-bold whitespace-nowrap opacity-75 hover:opacity-100"
+        >
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
       <SyntaxHighlighter
         language={lang}
         style={docco}
+        // docco sets these inline, so only customStyle can override them.
         customStyle={{
           backgroundColor: "transparent",
           padding: "0.75rem",
           borderRadius: "0.5rem",
           margin: 0,
         }}
+        className="text-[13px] leading-normal whitespace-pre [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]"
         wrapLongLines={false}
       >
         {source}
@@ -390,7 +396,7 @@ const Chatbot: FC = () => {
   }, []);
 
   const sendMessage = async () => {
-    if (input.trim() === "") return;
+    if (input.trim() === "" || loading) return;
     const userMessage: Message = {
       parts: [{ kind: "text", html: escapeHtml(input) }],
       sender: "user",
@@ -458,7 +464,7 @@ const Chatbot: FC = () => {
           .replace(/(Tools & Resources:)/g, "**$1**");
         setMessages((prev) => [
           ...prev,
-          htmlMessage(`<h4 class="msg-title">${title}</h4>${toHtml(roadmap)}`),
+          htmlMessage(`<h4 ${TITLE}>${escapeHtml(title)}</h4>${toHtml(roadmap)}`),
         ]);
       } else if (route === "code") {
         const response = await axios.post(
@@ -513,16 +519,19 @@ const Chatbot: FC = () => {
   }, [messages]);
 
   // Close on any click outside the window. Registered on the next tick so the
-  // click that opened it (e.g. the Header's NexGenie button) doesn't close it.
+  // click that opened it doesn't close it.
   useEffect(() => {
     if (!isOpen) return;
     const onClick = (e: MouseEvent) => {
       if (!windowRef.current?.contains(e.target as Node)) setIsOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setIsOpen(false);
     const id = setTimeout(() => document.addEventListener("click", onClick));
+    document.addEventListener("keydown", onKey);
     return () => {
       clearTimeout(id);
       document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
     };
   }, [isOpen]);
 
@@ -538,50 +547,56 @@ const Chatbot: FC = () => {
   };
 
   return (
-    <div className="chatbot">
-      <div
-        className="chat-button"
+    <div
+      className={`fixed bottom-5 right-5 z-[1000] font-sans ${
+        // On phones, sit above any bottom nav on the host page while open.
+        isOpen ? "max-[767.98px]:z-[100000]" : ""
+      }`}
+    >
+      <button
+        type="button"
+        aria-label="Open NexGenie chat"
+        className={`chat-button flex items-center justify-center w-[60px] h-[60px] max-[768px]:w-[50px] max-[768px]:h-[50px] max-[480px]:w-[45px] max-[480px]:h-[45px] rounded-full cursor-pointer transition-opacity duration-300 ${
+          isOpen ? "invisible opacity-0" : ""
+        }`}
         onClick={toggleChat}
-        style={{
-          visibility: isOpen ? "hidden" : "visible",
-          opacity: isOpen ? 0 : 1,
-          transition: "opacity 0.3s ease",
-        }}
       >
         <img
           src="/assets/nexgenie.png"
           alt="Chatbot icon"
-          width={50}
-          height={50}
+          className="w-[54px] h-[54px] max-[768px]:w-[45px] max-[768px]:h-[45px] max-[480px]:w-10 max-[480px]:h-10"
         />
-      </div>
+      </button>
 
       {isOpen && (
-        <div className="chat-window" ref={windowRef}>
-          <div className="chat-header">
-            <img src="/assets/nexgenie.png" alt="icon" width={30} height={30} />
-            <span className="chat-title">
+        <div
+          ref={windowRef}
+          className="fixed bottom-[30px] max-[767.98px]:bottom-2.5 right-[30px] w-80 max-[768px]:w-[min(90%,380px)] max-[480px]:w-[85%] h-[500px] rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.08)] flex flex-col overflow-hidden z-[1001] bg-white text-black"
+        >
+          <div className="flex items-center p-3 bg-sage text-white">
+            <img src="/assets/nexgenie.png" alt="icon" className="w-10 h-10 mr-2.5" />
+            <span className="flex flex-col flex-grow text-left text-base font-bold leading-[1.2]">
               NexGenie
-              <small className="chat-subtitle">LearnNexus AI Assistant</small>
+              <small className="text-[11px] font-normal opacity-85">LearnNexus AI Assistant</small>
             </span>
-            <button className="close-button" onClick={toggleChat}>
-              <FontAwesomeIcon icon={faTimes} />
-            </button>
           </div>
 
-          <div className="messages">
+          {/* overflow-x-hidden: overflow-y alone makes x auto, so one wide code
+              block would scroll the whole conversation sideways. */}
+          <div
+            className="flex-grow p-3 overflow-y-auto overflow-x-hidden bg-white [scrollbar-width:thin] [scrollbar-color:#e5e7eb_transparent]"
+          >
             {messages.map((msg, index) => (
-              <div key={index} className={`message ${msg.sender}`}>
+              <div
+                key={index}
+                className={`flex items-start mb-2.5 ${
+                  msg.sender === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
                 {msg.sender === "bot" && (
-                  <img
-                    className="avatar bot-avatar"
-                    src="/assets/nexgenie.png"
-                    alt="Bot Avatar"
-                    width={30}
-                    height={30}
-                  />
+                  <img src="/assets/nexgenie.png" alt="Bot Avatar" className={avatarClass("bot")} />
                 )}
-                <div className={`chat-bubble ${msg.sender}`}>
+                <div className={bubbleClass(msg.sender)}>
                   {msg.parts.map((part, i) =>
                     part.kind === "code" ? (
                       <CodeBlock key={i} lang={part.lang} source={part.source} />
@@ -598,32 +613,20 @@ const Chatbot: FC = () => {
                   )}
                 </div>
                 {msg.sender === "user" && (
-                  <img
-                    className="avatar user-avatar"
-                    src="/assets/user_avatar.png"
-                    alt="User Avatar"
-                    width={30}
-                    height={30}
-                  />
+                  <img src="/assets/user_avatar.png" alt="User Avatar" className={avatarClass("user")} />
                 )}
               </div>
             ))}
             {loading && (
-              <div className="message bot">
-                <img
-                  className="avatar bot-avatar"
-                  src="/assets/nexgenie.png"
-                  alt="Bot Avatar"
-                  width={30}
-                  height={30}
-                />
-                <div className="chat-bubble bot">typing...</div>
+              <div className="flex items-start mb-2.5 justify-start">
+                <img src="/assets/nexgenie.png" alt="Bot Avatar" className={avatarClass("bot")} />
+                <div className={bubbleClass("bot")}>typing...</div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="input-area">
+          <div className="flex items-center p-2.5 border-t border-gray-200 bg-white">
             <input
               id="chat-input"
               type="text"
@@ -631,8 +634,15 @@ const Chatbot: FC = () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Type a message..."
+              className="flex-grow p-2.5 text-sm max-[768px]:text-xs border border-sage focus:border-sage-dark rounded-full outline-none bg-white text-black"
             />
-            <button onClick={sendMessage}>Send</button>
+            <button
+              onClick={sendMessage}
+              disabled={loading}
+              className="bg-sage hover:bg-sage-hover disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-full px-[15px] py-2.5 max-[768px]:px-3 max-[768px]:py-2 max-[768px]:text-xs ml-2 transition-colors duration-300"
+            >
+              Send
+            </button>
           </div>
         </div>
       )}
